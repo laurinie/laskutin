@@ -1,0 +1,13 @@
+# Generoidut laskut ja viennit – älä committaa jäsentietoja
+laskut*.pdf
+laskut*.zip
+laskut*.csv
+
+# Kaikki PDF:t ja CSV:t paitsi mukana toimitettavat esimerkit
+*.pdf
+*.csv
+!esimerkki-lasku.pdf
+!esimerkki-jasenet.csv
+
+.DS_Store
+node_modules/
