@@ -32,6 +32,7 @@ lähde koneelta mihinkään.
 ## Käyttö paikallisesti
 
 ```bash
+nvm use           # Node-versio .nvmrc-tiedostosta (24)
 npm install
 npm run dev       # http://localhost:5173
 ```
