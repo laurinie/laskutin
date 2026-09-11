@@ -115,7 +115,7 @@ test('PDF:ään piirretyt palkit vastaavat Code 128C -koodausta', () => {
   const doc = createDoc();
   drawInvoice(doc, invoice({ barcode: code }), cfg, null);
 
-  const bars = barRects(doc, 12);
+  const bars = barRects(doc, 12.7);
   assert.ok(bars.length > 30, `palkkeja löytyi ${bars.length}`);
 
   const expected = code128c(code);
@@ -134,5 +134,29 @@ test('PDF:ään piirretyt palkit vastaavat Code 128C -koodausta', () => {
 test('viivakoodi jätetään pois kun sitä ei ole', () => {
   const doc = createDoc();
   drawInvoice(doc, invoice(), cfg, null);
-  assert.equal(barRects(doc, 12).length, 0);
+  assert.equal(barRects(doc, 12.7).length, 0);
+});
+
+test('virtuaaliviivakoodi tulostuu myös numeroina', () => {
+  const code = '421123456000007850000525000000000000000202600017260925';
+  const doc = createDoc();
+  drawInvoice(doc, invoice({ barcode: code }), cfg, null);
+
+  const text = pdfText(doc);
+  assert.match(text, /VIRTUAALIVIIVAKOODI/);
+  assert.match(text, /42112 34560 00007/, 'numerosarja viiden ryhmissä');
+});
+
+test('viivakoodin ympärillä on valkoinen hiljainen alue', () => {
+  const code = '421123456000007850000525000000000000000202600017260925';
+  const doc = createDoc();
+  drawInvoice(doc, invoice({ barcode: code }), cfg, null);
+
+  const plates = barRects(doc, 12.7 + 8);
+  assert.equal(plates.length, 1, 'yksi valkoinen tausta');
+
+  const bars = barRects(doc, 12.7);
+  const plate = plates[0]!;
+  assert.ok(plate.x < bars[0]!.x, 'tausta alkaa ennen ensimmäistä palkkia');
+  assert.ok(plate.x + plate.width > bars[bars.length - 1]!.x + bars[bars.length - 1]!.width);
 });

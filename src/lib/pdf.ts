@@ -3,6 +3,7 @@ import type { Invoice, InvoiceConfig, Logo } from './types.js';
 import { money } from './format.js';
 import { refPretty } from './reference.js';
 import { barsOf, code128c } from './code128.js';
+import { barcodePretty } from './barcode.js';
 
 export const A4 = { w: 210, h: 297 } as const;
 export const M = 18;
@@ -16,8 +17,10 @@ const INK: [number, number, number] = [25, 28, 34];
 const BOX_FILL: [number, number, number] = [246, 248, 251];
 const RULE: [number, number, number] = [215, 220, 228];
 const BARCODE_W = 104;
-const BARCODE_H = 12;
-const BARCODE_BLOCK = BARCODE_H + 8;
+const BARCODE_H = 12.7;
+const BARCODE_QUIET = 4;
+const BARCODE_TEXT_H = 10;
+const BARCODE_BLOCK = BARCODE_TEXT_H + BARCODE_H + 2 * BARCODE_QUIET + 2;
 
 const pageNumber = (doc: jsPDF): number => doc.getCurrentPageInfo().pageNumber;
 
@@ -206,13 +209,30 @@ function drawPaymentBox(doc: jsPDF, cfg: InvoiceConfig, invoice: Invoice, top: n
     doc.setFontSize(8.5);
     doc.text(cfg.payNote, M + 6, afterRows + 1.5);
   }
-  if (invoice.barcode) drawBarcode(doc, invoice.barcode, afterRows + noteHeight);
+  if (invoice.barcode) {
+    const barcodeTop = afterRows + noteHeight;
+    drawBarcodeNumber(doc, invoice.barcode, barcodeTop);
+    drawBarcode(doc, invoice.barcode, barcodeTop + BARCODE_TEXT_H);
+  }
+}
+
+function drawBarcodeNumber(doc: jsPDF, code: string, top: number): void {
+  doc.setTextColor(...GRAY);
+  doc.setFontSize(7.5);
+  doc.text('VIRTUAALIVIIVAKOODI', M + 6, top);
+
+  doc.setTextColor(...INK);
+  doc.setFontSize(9);
+  doc.text(barcodePretty(code), M + 6, top + 5);
 }
 
 function drawBarcode(doc: jsPDF, code: string, top: number): void {
   const modules = code128c(code);
   const moduleWidth = BARCODE_W / modules.length;
   const left = (A4.w - BARCODE_W) / 2;
+
+  doc.setFillColor(255, 255, 255);
+  doc.rect(left - BARCODE_QUIET, top - BARCODE_QUIET, BARCODE_W + 2 * BARCODE_QUIET, BARCODE_H + 2 * BARCODE_QUIET, 'F');
 
   doc.setFillColor(0, 0, 0);
   for (const bar of barsOf(modules, moduleWidth)) {

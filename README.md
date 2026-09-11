@@ -24,7 +24,9 @@ lähde koneelta mihinkään.
   - *Yhteinen viite* – sama viite kaikille. Jos annat pelkän rungon, tarkiste lisätään automaattisesti.
 - **Pankkiviivakoodi**: laskuun piirretään Code 128C -viivakoodi ja CSV-vientiin lisätään
   54-merkkinen virtuaaliviivakoodi (versio 4) Finanssiala ry:n pankkiviivakoodi-oppaan mukaisesti.
-  Viivakoodi on 104 mm leveä ja 12 mm korkea (opas sallii 70–105 mm ja 10–12,7 mm). Vaatii
+  Viivakoodi on 104 mm leveä ja 12,7 mm korkea (opas sallii 70–105 mm ja 10–12,7 mm), ja se
+  piirretään valkoiselle pohjalle, jotta hiljaiset alueet säilyvät. Sama numerosarja tulostuu
+  laskulle myös luettavana tekstinä viiden numeron ryhmissä. Vaatii
   suomalaisen IBANin, viitenumeron ja summan alle 1 000 000 € – muuten sovellus kertoo syyn
   eikä piirrä koodia.
 - **Tulosteet**: esikatselu selaimessa, yksi PDF jossa jokainen lasku omana sivuna,
@@ -103,6 +105,10 @@ npm run check     # build + testit
 ## Huomioita
 
 - Viitenumeron pituus on 4–20 numeroa, eli etuliite + juokseva numero saa olla enintään 19 numeroa.
+- **Viivakoodin lukeminen**: koodi on tarkoitettu tulosteelle. Testasin valmiin PDF:n
+  zxing-cpp-lukijalla: se lukee koodin oikein 150 dpi:stä ylöspäin, mutta ei enää 120 dpi:ssä.
+  Näytöltä skannattaessa PDF kannattaa siis zoomata noin 200 prosenttiin. Spesifikaatio rajaa
+  leveyden 105 millimetriin, joten moduulia ei voi kasvattaa tätä suuremmaksi.
 - Pankkiviivakoodin Code 128C -koodaus on omaa koodia (`src/lib/code128.ts`), ja testit vertaavat
   sen tuotosta jsbarcode-kirjastoon 50 satunnaisella koodilla. Lisäksi yksi testi lukee valmiin
   PDF:n sisältövirrasta piirretyt palkit takaisin moduulijonoksi ja vertaa sitä koodaukseen.

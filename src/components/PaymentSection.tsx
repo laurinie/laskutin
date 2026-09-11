@@ -67,6 +67,13 @@ export function PaymentSection({ form, onChange, invoices }: PaymentSectionProps
       </label>
 
       {form.barcode && <BarcodeCheck form={form} invoices={invoices} />}
+      {form.barcode && (
+        <p className="hint">
+          Viivakoodi luetaan tulosteesta normaalisti. Näytöltä skannattaessa zoomaa PDF vähintään
+          200 prosenttiin – täydessä A4-koossa palkit ovat liian tiheitä puhelimen kameralle.
+          Virtuaaliviivakoodin numerosarja tulostuu laskulle ja on myös CSV-viennissä.
+        </p>
+      )}
     </Card>
   );
 }
