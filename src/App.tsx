@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Logo } from './lib/types.js';
 import { configOf, csvOf, defaultForm, invoicesFor, migrateForm, type InvoiceForm } from './lib/form.js';
 import { parseRecipients } from './lib/recipients.js';
-import { countVisit } from './lib/analytics.js';
 import { usePersistentState } from './hooks/usePersistentState.js';
 import { RecipientsSection } from './components/RecipientsSection.js';
 import { ContentSection } from './components/ContentSection.js';
@@ -28,8 +27,6 @@ export function App() {
   );
   const { value: logo, setValue: setLogo } = usePersistentState<Logo | null>(LOGO_KEY, () => null);
   const [status, setStatus] = useState<Status>({ message: '', isError: false });
-
-  useEffect(countVisit, []);
 
   const setField = <K extends keyof InvoiceForm>(key: K, value: InvoiceForm[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -86,8 +83,8 @@ export function App() {
 
       <footer className="foot">
         <p>
-          Vastaanottajien tiedot pysyvät koneellasi: lomakkeen arvot tallentuvat vain selaimen localStorageen, eikä
-          listaa tai laskuja lähetetä verkkoon. Sivusta kerätään nimetön käyntitilasto (GoatCounter) ilman evästeitä.
+          Tietosi pysyvät koneellasi: lomakkeen arvot tallentuvat vain selaimen localStorageen, eikä vastaanottajalistaa
+          lähetetä verkkoon.
           {storageFull && ' Huom: selaimen tallennustila on täynnä, joten asetukset eivät säily.'}
         </p>
       </footer>
