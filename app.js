@@ -86,25 +86,87 @@ function splitCols(line) {
   return out.map((s) => s.trim());
 }
 
+/* Otsikkorivin sarakkeiden tunnistus. Järjestys ratkaisee: etu-/sukunimi ennen nimeä,
+   jotta "Etunimi" ei mene "Nimi"-sarakkeeksi. */
+const HEADER_PATTERNS = [
+  ['email', /s[äa]hk[öo]post|e-?mail|sposti/i],
+  ['first', /etunimi|first\s*name|given\s*name/i],
+  ['last', /sukunimi|last\s*name|family\s*name/i],
+  ['name', /nimi|name/i],
+  ['amount', /summa|maksu|hinta|amount|eur|€/i]
+];
+
+/** Palauttaa sarakekartan otsikkoriviltä, tai null jos otsikkoa ei tunnisteta. */
+function headerMap(cols) {
+  const map = {};
+  cols.forEach((col, i) => {
+    const t = String(col).trim();
+    if (!t) return;
+    const hit = HEADER_PATTERNS.find(([key, re]) => map[key] === undefined && re.test(t));
+    if (hit) map[hit[0]] = i;
+  });
+  const named = map.name !== undefined || map.first !== undefined || map.last !== undefined;
+  return (map.email !== undefined || named) ? map : null;
+}
+
+/** Sarakekartta ihmisluettavaksi, esim. "nimi: Etunimi + Sukunimi · summa: Jäsenmaksu". */
+function describeMap(map, header) {
+  if (!map) return '';
+  const parts = [];
+  const nameCols = [map.first, map.last].filter((i) => i !== undefined).map((i) => header[i]);
+  if (nameCols.length) parts.push(`nimi: ${nameCols.join(' + ')}`);
+  else if (map.name !== undefined) parts.push(`nimi: ${header[map.name]}`);
+  if (map.email !== undefined) parts.push(`sähköposti: ${header[map.email]}`);
+  if (map.amount !== undefined) parts.push(`summa: ${header[map.amount]}`);
+  return parts.join(' · ');
+}
+
+/** Sarakkeista jäseneksi: tunnistaa sähköpostin, nimen ja mahdollisen summan järjestyksestä riippumatta. */
+function rowToMember(cols, map) {
+  if (map) {
+    const pick = (i) => (i === undefined ? '' : String(cols[i] ?? '').trim());
+    const email = pick(map.email) || cols.find(isEmail) || '';
+    const name = [pick(map.first), pick(map.last)].filter(Boolean).join(' ') || pick(map.name);
+    const amount = map.amount === undefined ? null : parseAmount(pick(map.amount));
+    if (name || email) {
+      return { name: name || email.split('@')[0], email, amount, badEmail: !isEmail(email) };
+    }
+  }
+  return rowToMemberHeuristic(cols);
+}
+
+/** Ilman otsikkoriviä: arvataan sarakkeet sisällön perusteella. */
+function rowToMemberHeuristic(cols) {
+  const email = cols.find(isEmail) || cols.find((c) => c.includes('@')) || '';
+  const rest = cols.filter((c) => c !== email);
+  // nimi = ensimmäinen sarake joka ei ole summa eikä sposti
+  let name = rest.find((c) => c && parseAmount(c) === null) || '';
+  if (!name && rest.length) name = rest[0];
+  const amountCol = rest.find((c) => c !== name && parseAmount(c) !== null);
+  return {
+    name: name || email.split('@')[0],
+    email,
+    amount: parseAmount(amountCol),
+    badEmail: !isEmail(email)
+  };
+}
+
+let columnInfo = '';   // viimeksi tunnistetut sarakkeet, näytetään käyttäjälle
+
 function parseMembers(text) {
   const rows = [];
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  let map = null;
+  columnInfo = '';
   lines.forEach((line, idx) => {
     const cols = splitCols(line);
     // otsikkorivi: ensimmäinen rivi ilman sähköpostia
-    if (idx === 0 && !cols.some(isEmail)) return;
-    const email = cols.find(isEmail) || cols.find((c) => c.includes('@')) || '';
-    const rest = cols.filter((c) => c !== email);
-    // nimi = ensimmäinen sarake joka ei ole summa eikä sposti
-    let name = rest.find((c) => c && parseAmount(c) === null) || '';
-    if (!name && rest.length) name = rest[0];
-    const amountCol = rest.find((c) => c !== name && parseAmount(c) !== null);
-    rows.push({
-      name: name || email.split('@')[0],
-      email,
-      amount: parseAmount(amountCol),
-      badEmail: !isEmail(email)
-    });
+    if (idx === 0 && !cols.some(isEmail)) {
+      map = headerMap(cols);
+      columnInfo = describeMap(map, cols);
+      return;
+    }
+    rows.push(rowToMember(cols, map));
   });
   return rows;
 }
@@ -134,6 +196,161 @@ function referenceFor(index) {
   const prefix = $('refPrefix').value.replace(/\D/g, '');
   const n = Number($('refStart').value || 1) + index;
   return refWithCheck(prefix + String(n).padStart(4, '0')) || '';
+}
+
+/* ---------- Excel (.xlsx) ----------
+   Luetaan ja kirjoitetaan suoraan JSZipillä: .xlsx on zip-paketti XML-tiedostoja,
+   joten erillistä taulukkokirjastoa ei tarvita. */
+
+const XML_ENT = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
+const xmlDecode = (s) => String(s).replace(/&(#x?[0-9a-fA-F]+|amp|lt|gt|quot|apos);/g, (m, e) =>
+  e[0] === '#'
+    ? String.fromCodePoint(Number(e[1] === 'x' || e[1] === 'X' ? '0x' + e.slice(2) : e.slice(1)))
+    : XML_ENT[e]);
+const xmlEscape = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/** Sarakeviite (esim. "AB12") nollapohjaiseksi indeksiksi. */
+function colIndex(ref) {
+  const letters = (String(ref).match(/^[A-Z]+/) || ['A'])[0];
+  let n = 0;
+  for (const c of letters) n = n * 26 + (c.charCodeAt(0) - 64);
+  return n - 1;
+}
+
+/** Kaikki <t>-tekstit elementistä yhdeksi merkkijonoksi (rich text -ajot mukaan lukien). */
+function textOf(xml) {
+  let out = '';
+  String(xml).replace(/<t[^>]*>([\s\S]*?)<\/t>/g, (m, t) => { out += xmlDecode(t); return m; });
+  return out;
+}
+
+/** Lukee .xlsx-tiedoston ensimmäisen taulukon soluriveiksi. */
+async function readXlsx(file) {
+  if (!window.JSZip) throw new Error('JSZip ei latautunut – Excel-tuonti ei käytettävissä.');
+  const zip = await JSZip.loadAsync(file);
+  const sheetPath = Object.keys(zip.files)
+    .filter((n) => /^xl\/worksheets\/sheet\d+\.xml$/i.test(n))
+    .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))[0];
+  if (!sheetPath) throw new Error('Tiedostosta ei löytynyt Excel-taulukkoa.');
+
+  const shared = [];
+  const ssFile = zip.file('xl/sharedStrings.xml');
+  if (ssFile) {
+    const ss = await ssFile.async('string');
+    ss.replace(/<si\b[^>]*>([\s\S]*?)<\/si>/g, (m, si) => { shared.push(textOf(si)); return m; });
+  }
+
+  const sheet = await zip.file(sheetPath).async('string');
+  const rows = [];
+  sheet.replace(/<row\b[^>]*?(?:\/>|>([\s\S]*?)<\/row>)/g, (rm, body = '') => {
+    const cells = [];
+    let auto = 0;
+    String(body).replace(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g, (cm, attrs, cellBody = '') => {
+      const ref = (attrs.match(/r="([A-Z]+\d+)"/) || [])[1];
+      const type = (attrs.match(/t="([^"]+)"/) || [])[1] || 'n';
+      const v = (String(cellBody).match(/<v>([\s\S]*?)<\/v>/) || [])[1];
+      let val = '';
+      if (type === 's') val = shared[Number(v)] ?? '';
+      else if (type === 'inlineStr') val = textOf(cellBody);
+      else val = v == null ? '' : xmlDecode(v);
+      cells[ref ? colIndex(ref) : auto] = val;
+      auto = (ref ? colIndex(ref) : auto) + 1;
+      return cm;
+    });
+    rows.push(Array.from(cells, (c) => (c == null ? '' : String(c).trim())));
+    return rm;
+  });
+  return rows.filter((r) => r.some((c) => c));
+}
+
+const TEMPLATE_ROWS = [
+  ['Nimi', 'Sähköposti', 'Summa'],
+  ['Matti Meikäläinen', 'matti.meikalainen@example.com', 40],
+  ['Maija Virtanen', 'maija.virtanen@example.com', 40],
+  ['Ömer Äkkinen', 'omer.akkinen@example.com', 20]
+];
+
+/** Rakentaa .xlsx-pohjan (otsikkorivi lihavoituna) ilman lisäkirjastoja. */
+async function templateXlsx() {
+  if (!window.JSZip) throw new Error('JSZip ei latautunut – Excel-pohjaa ei voi luoda.');
+  const NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+  const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const colRef = (i) => {
+    let s = '', n = i + 1;
+    while (n > 0) { const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - r) / 26); }
+    return s;
+  };
+  const sheetData = TEMPLATE_ROWS.map((row, r) => {
+    const cells = row.map((val, c) => {
+      const ref = colRef(c) + (r + 1);
+      const style = r === 0 ? ' s="1"' : '';
+      return typeof val === 'number'
+        ? `<c r="${ref}"${style}><v>${val}</v></c>`
+        : `<c r="${ref}"${style} t="inlineStr"><is><t xml:space="preserve">${xmlEscape(val)}</t></is></c>`;
+    }).join('');
+    return `<row r="${r + 1}">${cells}</row>`;
+  }).join('');
+
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
+    `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
+    `<Default Extension="xml" ContentType="application/xml"/>` +
+    `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
+    `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
+    `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`);
+  zip.file('_rels/.rels',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+    `<Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+  zip.file('xl/workbook.xml',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="${NS}" xmlns:r="${REL}">` +
+    `<sheets><sheet name="Jäsenet" sheetId="1" r:id="rId1"/></sheets></workbook>`);
+  zip.file('xl/_rels/workbook.xml.rels',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+    `<Relationship Id="rId1" Type="${REL}/worksheet" Target="worksheets/sheet1.xml"/>` +
+    `<Relationship Id="rId2" Type="${REL}/styles" Target="styles.xml"/></Relationships>`);
+  zip.file('xl/styles.xml',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="${NS}">` +
+    `<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>` +
+    `<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>` +
+    `<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>` +
+    `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>` +
+    `<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>` +
+    `<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>` +
+    `<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
+  zip.file('xl/worksheets/sheet1.xml',
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="${NS}">` +
+    `<cols><col min="1" max="1" width="28" customWidth="1"/><col min="2" max="2" width="36" customWidth="1"/>` +
+    `<col min="3" max="3" width="12" customWidth="1"/></cols><sheetData>${sheetData}</sheetData></worksheet>`);
+  return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+const TEMPLATE_CSV = '﻿' + TEMPLATE_ROWS
+  .map((r) => r.map((v) => (typeof v === 'number' ? v.toFixed(2).replace('.', ',') : v)).join(';'))
+  .join('\r\n') + '\r\n';
+
+/** Tuo CSV-, teksti- tai Excel-tiedoston jäsenlistaan. */
+async function importFile(file) {
+  try {
+    if (/\.xlsx$/i.test(file.name) || /spreadsheetml/.test(file.type)) {
+      const rows = await readXlsx(file);
+      if (!rows.length) { status('Excel-tiedostosta ei löytynyt rivejä.', true); return; }
+      // solut takaisin tekstiksi, jotta lista näkyy ja on muokattavissa
+      $('members').value = rows
+        .map((cols) => cols.map((c) => (/[;"\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(';'))
+        .join('\n');
+      refresh();
+      status(`Tuotu Excelistä: ${members.length} jäsentä (${rows.length} riviä).`);
+    } else if (/\.xls$/i.test(file.name)) {
+      status('Vanhaa .xls-muotoa ei tueta. Tallenna Excelissä muodossa .xlsx tai CSV.', true);
+    } else {
+      $('members').value = await file.text();
+      refresh();
+      status(`Tuotu tiedostosta: ${members.length} jäsentä.`);
+    }
+  } catch (e) {
+    status('Tiedoston luku epäonnistui: ' + e.message, true);
+  }
 }
 
 /* ---------- PDF ---------- */
@@ -324,6 +541,10 @@ function renderTable() {
     </tr>`;
   }).join('');
   wrap.innerHTML = `<table><thead><tr><th>Laskunro</th><th>Nimi</th><th>Sähköposti</th><th>Viite</th><th>Summa</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const info = $('columnInfo');
+  info.textContent = columnInfo ? `Tunnistetut sarakkeet → ${columnInfo}` : '';
+  const bad = members.filter((m) => m.badEmail).length;
+  if (bad) info.textContent += `${columnInfo ? ' · ' : ''}${bad} riviltä puuttuu kelvollinen sähköposti`;
 }
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -514,9 +735,35 @@ function init() {
 
   $('csvFile').onchange = (e) => {
     const f = e.target.files[0];
-    if (!f) return;
-    f.text().then((t) => { $('members').value = t; refresh(); });
+    if (f) importFile(f);
+    e.target.value = '';                      // sama tiedosto voidaan tuoda uudelleen
   };
+  $('tplCsvBtn').onclick = () => {
+    download(new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' }), 'jasenlista-pohja.csv');
+    status('CSV-pohja ladattu. Täytä nimet ja sähköpostit, tuo sitten takaisin.');
+  };
+  $('tplXlsxBtn').onclick = async () => {
+    try {
+      download(await templateXlsx(), 'jasenlista-pohja.xlsx');
+      status('Excel-pohja ladattu. Täytä nimet ja sähköpostit, tuo sitten takaisin.');
+    } catch (err) {
+      status('Excel-pohjan luonti epäonnistui: ' + err.message, true);
+    }
+  };
+
+  // raahaa ja pudota tiedosto jäsenlistakenttään
+  const drop = $('members');
+  ['dragover', 'dragenter'].forEach((ev) => drop.addEventListener(ev, (e) => {
+    e.preventDefault();
+    drop.style.outline = '2px dashed var(--accent)';
+  }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, () => { drop.style.outline = ''; }));
+  drop.addEventListener('drop', (e) => {
+    const f = e.dataTransfer?.files?.[0];
+    if (!f) return;
+    e.preventDefault();
+    importFile(f);
+  });
   $('logoFile').onchange = (e) => { if (e.target.files[0]) loadLogo(e.target.files[0]); };
 
   document.querySelectorAll('input[name=refMode]').forEach((r) => {

@@ -6,9 +6,14 @@ lähde koneelta mihinkään.
 
 ## Ominaisuudet
 
-- **Jäsenlistan tuonti**: liitä leikepöydältä tai tuo CSV. Erottimena `;`, `,` tai tab.
-  Sarakkeet: `Nimi;sähköposti;summa` (summa valinnainen, korvaa oletussumman ko. jäsenellä).
-  Otsikkorivi tunnistetaan automaattisesti.
+- **Jäsenlistan tuonti**: liitä leikepöydältä, tuo **CSV- tai Excel-tiedosto (.xlsx)** tai raahaa
+  tiedosto kenttään. Erottimena `;`, `,` tai tab. Valmiin pohjan saa napeista *Excel-pohja* ja
+  *CSV-pohja* (samat tiedostot ovat myös repossa).
+- **Sarakkeiden tunnistus**: otsikkorivistä tunnistetaan nimi-, sähköposti- ja summasarake, myös
+  erilliset `Etunimi`/`Sukunimi`-sarakkeet ja englanninkieliset otsikot (`Name`, `Email`, `Amount`).
+  Jäsennumeron kaltaiset sarakkeet ohitetaan, eikä niitä sekoiteta summaan. Ilman otsikkoriviä
+  sarakkeet päätellään sisällöstä. Sovellus näyttää, mitkä sarakkeet se tunnisti.
+  Jäsenkohtainen summa korvaa oletussumman ko. jäsenellä.
 - **Laskun sisältö**: otsikko, monirivinen saatesanat-teksti, laskurivit (`Kuvaus;summa`),
   kuva/logo (oikea ylänurkka, vasen tai leveä banneri) ja alatunniste.
 - **Maksutiedot**: saaja, IBAN (tarkistetaan mod-97-algoritmilla), BIC, laskun päivä,
@@ -69,11 +74,16 @@ vaihda `index.html`:n `<script src>`-polut paikallisiin.
 | `styles.css` | Ulkoasu (tukee vaaleaa ja tummaa tilaa) |
 | `app.js` | Jäsenlistan jäsennys, viitenumerot, IBAN-tarkistus, PDF:n piirto, lataukset |
 | `esimerkki-jasenet.csv` | Esimerkkiaineisto tuontia varten |
+| `jasenlista-pohja.xlsx` | Excel-pohja jäsenlistalle (sama kuin *Excel-pohja*-napista) |
+| `jasenlista-pohja.csv` | CSV-pohja jäsenlistalle |
 | `esimerkki-lasku.pdf` | Esimerkkituloste (2 laskua, testilogolla) |
 
 ## Huomioita
 
 - Viitenumeron pituus on 4–20 numeroa, eli etuliite + juokseva numero saa olla enintään 19 numeroa.
+- Excel-tuki kattaa `.xlsx`-muodon (luetaan ja kirjoitetaan suoraan JSZipillä, ilman taulukkokirjastoa).
+  Vanhaa binääristä `.xls`-muotoa ei tueta – tallenna se Excelissä muodossa `.xlsx` tai CSV. Laskukaavat
+  luetaan niiden tallennetusta arvosta, joten tallenna tiedosto Excelissä ennen tuontia.
 - Jäsenkohtainen summa CSV:ssä korvaa laskurivit yhdellä rivillä (kuvaus otetaan ensimmäiseltä laskuriviltä).
 - PDF käyttää Helvetica-fonttia, joka tukee skandeja (ä, ö, å).
 - Mahdollinen jatkokehitys: virtuaaliviivakoodi / QR-koodi maksuosioon, laskujen lähetys

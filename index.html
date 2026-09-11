@@ -17,20 +17,25 @@
   <!-- 1. Jäsenlista -->
   <section class="card">
     <h2>1. Jäsenlista</h2>
-    <p class="hint">Liitä jäsenrekisteristä saatu lista. Yksi jäsen per rivi, sarakkeet erotettuna pilkulla, puolipisteellä tai tabilla:
-      <code>Nimi;sähköposti;summa</code> (summa valinnainen). Otsikkorivi tunnistetaan automaattisesti.</p>
+    <p class="hint">Liitä jäsenrekisteristä saatu lista, tuo <b>CSV- tai Excel-tiedosto</b> (.xlsx) tai raahaa tiedosto kenttään.
+      Sarakkeet: <code>Nimi;sähköposti;summa</code> (summa valinnainen), erottimena <code>;</code>, <code>,</code> tai tab.
+      Otsikkorivi tunnistetaan automaattisesti. Aloita tarvittaessa valmiista pohjasta.</p>
     <textarea id="members" rows="8" spellcheck="false" placeholder="Matti Meikäläinen;matti@example.com
 Maija Virtanen;maija@example.com;45,00"></textarea>
     <div class="row">
       <label class="file-btn">
-        <input type="file" id="csvFile" accept=".csv,.txt,text/csv,text/plain" hidden>
-        <span>📂 Tuo CSV-tiedosto</span>
+        <input type="file" id="csvFile" hidden
+          accept=".csv,.txt,.xlsx,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        <span>📂 Tuo CSV tai Excel</span>
       </label>
+      <button id="tplXlsxBtn" class="secondary" type="button">⬇️ Excel-pohja</button>
+      <button id="tplCsvBtn" class="secondary" type="button">⬇️ CSV-pohja</button>
       <button id="parseBtn" class="secondary" type="button">Päivitä lista</button>
       <button id="demoBtn" class="ghost" type="button">Täytä esimerkkidata</button>
       <span id="memberCount" class="badge">0 jäsentä</span>
     </div>
     <div id="memberTableWrap" class="table-wrap"></div>
+    <p id="columnInfo" class="check"></p>
   </section>
 
   <!-- 2. Laskun sisältö -->

@@ -8,6 +8,10 @@ laskut*.csv
 *.csv
 !esimerkki-lasku.pdf
 !esimerkki-jasenet.csv
+!jasenlista-pohja.csv
+
+# omat testitiedostot
+_testi*
 
 .DS_Store
 node_modules/
