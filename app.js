@@ -1,9 +1,10 @@
-/* Laskuttaja – PDF-laskujen generointi selaimessa.
+/* Laskutin – PDF-laskujen generointi selaimessa.
    Riippuvuudet: jsPDF (PDF), JSZip (monta tiedostoa yhdessä paketissa). */
 'use strict';
 
 const $ = (id) => document.getElementById(id);
-const STORE_KEY = 'laskuttaja.v1';
+const STORE_KEY = 'laskutin.v1';
+const STORE_KEY_OLD = 'laskuttaja.v1';   // sovelluksen aiempi nimi
 const A4 = { w: 210, h: 297 };
 const M = 18;                       // marginaali mm
 const CONTENT_W = A4.w - 2 * M;
@@ -695,7 +696,9 @@ function save() {
 
 function restore() {
   let data;
-  try { data = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch { data = null; }
+  try {
+    data = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem(STORE_KEY_OLD) || 'null');
+  } catch { data = null; }
   if (!data) return false;
   FIELDS.forEach((f) => { if (typeof data[f] === 'string') $(f).value = data[f]; });
   if (data.refMode) {

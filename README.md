@@ -1,4 +1,4 @@
-# 🧾 Laskuttaja
+# 🧾 Laskutin
 
 Staattinen selainsovellus PDF-laskujen generointiin jäsenrekisterin nimi+sähköposti-listasta.
 Ei palvelinta, ei asennusta, ei tilien luontia – kaikki tapahtuu selaimessa, eikä jäsenlista
@@ -44,13 +44,17 @@ python3 -m http.server 8000
 ```bash
 git init -b main
 git add .
-git commit -m "Laskuttaja: PDF-laskugeneraattori"
-git remote add origin git@github.com:<käyttäjä>/laskuttaja.git
+git commit -m "Laskutin: PDF-laskugeneraattori"
+git remote add origin git@github.com:<käyttäjä>/<repo>.git
 git push -u origin main
 ```
 
 Sen jälkeen GitHubissa: **Settings → Pages → Source: Deploy from a branch → main / (root) → Save**.
-Sovellus on parin minuutin päästä osoitteessa `https://<käyttäjä>.github.io/laskuttaja/`.
+Sovellus on parin minuutin päästä osoitteessa `https://<käyttäjä>.github.io/<repo>/`.
+
+Tämä sovellus on julkaistu osoitteessa **https://laskutin.kettuniemi.fi** – oma verkkotunnus
+asetetaan kohdassa Settings → Pages → Custom domain, mikä luo repoon `CNAME`-tiedoston.
+Älä poista sitä, tai domain irtoaa julkaisusta.
 
 Sivusto on täysin staattinen (`index.html`, `styles.css`, `app.js`), joten mikä tahansa
 staattinen hosting toimii yhtä hyvin.
@@ -72,6 +76,8 @@ vaihda `index.html`:n `<script src>`-polut paikallisiin.
 |---|---|
 | `index.html` | Lomake ja sivun rakenne |
 | `styles.css` | Ulkoasu (tukee vaaleaa ja tummaa tilaa) |
+| `LICENSE` | MIT-lisenssi |
+| `CNAME` | Oma verkkotunnus GitHub Pagesille (`laskutin.kettuniemi.fi`) |
 | `app.js` | Jäsenlistan jäsennys, viitenumerot, IBAN-tarkistus, PDF:n piirto, lataukset |
 | `esimerkki-jasenet.csv` | Esimerkkiaineisto tuontia varten |
 | `jasenlista-pohja.xlsx` | Excel-pohja jäsenlistalle (sama kuin *Excel-pohja*-napista) |
@@ -88,3 +94,9 @@ vaihda `index.html`:n `<script src>`-polut paikallisiin.
 - PDF käyttää Helvetica-fonttia, joka tukee skandeja (ä, ö, å).
 - Mahdollinen jatkokehitys: virtuaaliviivakoodi / QR-koodi maksuosioon, laskujen lähetys
   suoraan sähköpostilla (vaatisi palvelimen tai esim. Mailgun-integraation).
+
+## Lisenssi
+
+[MIT](LICENSE) © 2026 laurinie
+
+Käytetyt kirjastot omilla lisensseillään: jsPDF (MIT) ja JSZip (MIT / GPLv3, kaksoislisenssi).
