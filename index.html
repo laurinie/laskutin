@@ -147,16 +147,10 @@ Kiitos kun olet jäsenenä mukana!</textarea>
   <p>Tietosi pysyvät koneellasi: lomakkeen arvot tallentuvat vain selaimen localStorageen, eikä jäsenlistaa lähetetä verkkoon.</p>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script>
-  /* Varalähde, jos ensisijainen CDN ei vastaa. */
-  [['jspdf', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'],
-   ['JSZip', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js']
-  ].forEach(([global, url]) => {
-    if (!window[global]) document.head.appendChild(Object.assign(document.createElement('script'), { src: url }));
-  });
-</script>
-<script src="app.js"></script>
+<!-- Riippuvuudet ovat repossa vendor-hakemistossa; integrity-tarkiste varmistaa,
+     ettei tiedosto ole muuttunut. Päivitys: npm run vendor -->
+<script src="vendor/jszip.min.js" integrity="sha384-DdGlNq+wVXAn83gXqwyeFHB7iyXy6L0rLrNzgDmhKWPjiJLg9vj6qosYmZmkMfQ+"></script>
+<script src="vendor/jspdf.umd.min.js" integrity="sha384-qovJwSBbRDPP5cEjCp8S0UP66wrvnjaa60XMOGzTNanrThcrGfXfnZkvgY8N1KT3"></script>
+<script type="module" src="dist/app.js"></script>
 </body>
 </html>

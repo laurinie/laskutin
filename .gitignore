@@ -15,3 +15,6 @@ _testi*
 
 .DS_Store
 node_modules/
+
+# Käännetty JS (dist/) ja vendoroidut kirjastot (vendor/) KUULUVAT versionhallintaan:
+# GitHub Pages tarjoilee ne sellaisenaan, eikä julkaisu vaadi build-vaihetta.

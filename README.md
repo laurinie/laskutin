@@ -59,16 +59,59 @@ asetetaan kohdassa Settings → Pages → Custom domain, mikä luo repoon `CNAME
 Sivusto on täysin staattinen (`index.html`, `styles.css`, `app.js`), joten mikä tahansa
 staattinen hosting toimii yhtä hyvin.
 
-## Riippuvuudet
+## Riippuvuudet ja turvallisuus
 
-Ladataan CDN:stä (jsDelivr, varalähteenä cdnjs) – vaatii verkkoyhteyden sivun latauksessa, mutta itse laskut
-luodaan paikallisesti:
+Kirjastot ovat repossa `vendor/`-hakemistossa – **sovellus ei lataa mitään ulkopuolelta**.
+Sivun voi ajaa täysin verkotta, eikä CDN:n kaatuminen tai kaappaus voi vaikuttaa siihen.
 
-- [jsPDF](https://github.com/parallax/jsPDF) 2.5.2 – PDF:n piirto
-- [JSZip](https://stuk.github.io/jszip/) 3.10.1 – ZIP-paketointi
+| Kirjasto | Versio | Lisenssi |
+|---|---|---|
+| [jsPDF](https://github.com/parallax/jsPDF) | 4.2.1 | MIT |
+| [JSZip](https://stuk.github.io/jszip/) | 3.10.2 | MIT tai GPLv3 |
 
-Jos haluat sovelluksen toimivan täysin ilman verkkoa, lataa molemmat tiedostot repoon ja
-vaihda `index.html`:n `<script src>`-polut paikallisiin.
+Jokaisella tiedostolla on `index.html`:ssä [SRI](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_integrity)-tarkiste
+(`integrity="sha384-…"`). Jos tiedosto muuttuu tavullakaan, selain kieltäytyy suorittamasta sitä.
+Tarkisteet ovat myös `vendor/versions.json`-tiedostossa.
+
+```bash
+npm run verify    # tarkistaa että vendor-tiedostot vastaavat tarkisteita
+npm run vendor    # päivittää vendor-tiedostot ja tarkisteet node_modulesista
+```
+
+Kirjastot asennetaan `npm install`illa vain kehitystä varten (tyypit ja `npm run vendor`);
+itse julkaistu sivusto ei tarvitse `node_modules`-hakemistoa.
+
+## Kehitys
+
+Lähdekoodi on TypeScriptiä hakemistossa `src/`, ja käännetty JavaScript menee hakemistoon
+`dist/`. Molemmat ovat versionhallinnassa, joten GitHub Pages tarjoilee sivuston ilman
+erillistä build-vaihetta.
+
+```bash
+npm install       # kehitysriippuvuudet (TypeScript + kirjastojen tyypit)
+npm run build     # kääntää src/ -> dist/
+npm run watch     # kääntää taustalla muutoksen yhteydessä
+npm test          # kääntää ja ajaa yksikkötestit
+npm run check     # verify + test
+```
+
+**Muista ajaa `npm run build` ennen committia**, muuten `dist/` jää vanhaksi eivätkä
+muutokset näy julkaistulla sivulla.
+
+Moduulit:
+
+| Tiedosto | Vastuu |
+|---|---|
+| `src/format.ts` | rahan, päivien ja tekstin muotoilu |
+| `src/reference.ts` | viitenumero (7-3-1) ja IBAN-tarkistus (mod 97) |
+| `src/members.ts` | jäsenlistan jäsennys ja sarakkeiden tunnistus |
+| `src/xlsx.ts` | Excel-tiedostojen luku ja pohjan kirjoitus |
+| `src/pdf.ts` | laskun piirto – ei DOM-riippuvuuksia, joten testattavissa Nodessa |
+| `src/app.ts` | käyttöliittymä, lomakkeen tila ja lataukset |
+
+Testit (`tests/`) ajetaan Noden omalla test runnerilla. Ne kattavat viitenumerot, IBANin,
+jäsenlistan jäsennyksen, Excel-luvun (myös openpyxl:llä tuotetulla kiintotiedostolla) ja
+PDF:n piirron samalla jsPDF-versiolla, joka on vendoroitu selainta varten.
 
 ## Tiedostot
 
@@ -76,13 +119,17 @@ vaihda `index.html`:n `<script src>`-polut paikallisiin.
 |---|---|
 | `index.html` | Lomake ja sivun rakenne |
 | `styles.css` | Ulkoasu (tukee vaaleaa ja tummaa tilaa) |
-| `LICENSE` | MIT-lisenssi |
-| `CNAME` | Oma verkkotunnus GitHub Pagesille (`laskutin.kettuniemi.fi`) |
-| `app.js` | Jäsenlistan jäsennys, viitenumerot, IBAN-tarkistus, PDF:n piirto, lataukset |
+| `src/*.ts` | TypeScript-lähdekoodi |
+| `dist/*.js` | Käännetty JavaScript, jota selain ajaa |
+| `vendor/` | Kirjastot ja niiden lisenssit + `versions.json` tarkisteineen |
+| `tests/` | Yksikkötestit ja testiaineistot |
+| `scripts/` | `vendor.mjs` (päivitys) ja `verify-vendor.mjs` (tarkistus) |
 | `esimerkki-jasenet.csv` | Esimerkkiaineisto tuontia varten |
 | `jasenlista-pohja.xlsx` | Excel-pohja jäsenlistalle (sama kuin *Excel-pohja*-napista) |
 | `jasenlista-pohja.csv` | CSV-pohja jäsenlistalle |
 | `esimerkki-lasku.pdf` | Esimerkkituloste (2 laskua, testilogolla) |
+| `LICENSE` | MIT-lisenssi |
+| `CNAME` | Oma verkkotunnus GitHub Pagesille (`laskutin.kettuniemi.fi`) |
 
 ## Huomioita
 
@@ -99,4 +146,5 @@ vaihda `index.html`:n `<script src>`-polut paikallisiin.
 
 [MIT](LICENSE) © 2026 laurinie
 
-Käytetyt kirjastot omilla lisensseillään: jsPDF (MIT) ja JSZip (MIT / GPLv3, kaksoislisenssi).
+Vendoroidut kirjastot omilla lisensseillään: jsPDF (MIT) ja JSZip (MIT / GPLv3, kaksoislisenssi),
+lisenssitekstit hakemistossa `vendor/`.

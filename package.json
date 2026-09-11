@@ -1,0 +1,31 @@
+{
+  "name": "laskutin",
+  "version": "1.0.0",
+  "description": "PDF-laskujen generointi jäsenlistasta – staattinen selainsovellus",
+  "scripts": {
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "vendor": "node scripts/vendor.mjs",
+    "verify": "node scripts/verify-vendor.mjs",
+    "check": "npm run verify && npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laurinie/laskutin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/laurinie/laskutin/issues"
+  },
+  "homepage": "https://github.com/laurinie/laskutin#readme",
+  "devDependencies": {
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.2",
+    "typescript": "^7.0.2"
+  },
+  "private": "true"
+}
