@@ -68,7 +68,7 @@ export function App() {
           onStatus={showStatus}
         />
         <ContentSection form={form} onChange={setField} logo={logo} onLogo={loadLogo} />
-        <PaymentSection form={form} onChange={setField} />
+        <PaymentSection form={form} onChange={setField} invoices={invoices} />
         <ReferenceSection form={form} onChange={setField} invoices={invoices} />
         <OutputSection
           invoices={invoices}

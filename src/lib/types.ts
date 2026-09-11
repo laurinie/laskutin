@@ -16,6 +16,7 @@ export interface Invoice {
   total: number;
   invoiceNo: number;
   reference: string;
+  barcode: string | null;
 }
 
 export interface InvoiceConfig {

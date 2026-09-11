@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { jsPDF } from 'jspdf';
 import { drawInvoice } from '../src/lib/pdf.js';
+import { code128c } from '../src/lib/code128.js';
 
 const createDoc = (): jsPDF => new jsPDF({ unit: 'mm', format: 'a4', compress: true });
 
@@ -47,6 +48,7 @@ const invoice = (over: Partial<Invoice> = {}): Invoice => ({
   total: 52.5,
   invoiceNo: 1001,
   reference: '202600017',
+  barcode: null,
   ...over
 });
 
@@ -95,4 +97,42 @@ test('logo upotetaan PDF:ään', () => {
   drawInvoice(doc, invoice(), cfg, { dataUrl: png, format: 'PNG', ratio: 300 / 110 });
   assert.equal(doc.getNumberOfPages(), 1);
   assert.match(Buffer.from(doc.output('arraybuffer')).toString('latin1'), /\/Image/, 'kuvaobjekti löytyy dokumentista');
+});
+
+const MM_TO_PT = 72 / 25.4;
+
+function barRects(doc: ReturnType<typeof createDoc>, heightMm: number): Array<{ x: number; width: number }> {
+  const tolerance = 0.01;
+  const rects = [...pdfText(doc).matchAll(/(-?[\d.]+) (-?[\d.]+) (-?[\d.]+) (-?[\d.]+) re/g)]
+    .map((match) => ({ x: Number(match[1]), width: Number(match[3]), height: Math.abs(Number(match[4])) }))
+    .filter((rect) => Math.abs(rect.height - heightMm * MM_TO_PT) < tolerance);
+
+  return rects.sort((a, b) => a.x - b.x);
+}
+
+test('PDF:ään piirretyt palkit vastaavat Code 128C -koodausta', () => {
+  const code = '421123456000007850000525000000000000000202600017260925';
+  const doc = createDoc();
+  drawInvoice(doc, invoice({ barcode: code }), cfg, null);
+
+  const bars = barRects(doc, 12);
+  assert.ok(bars.length > 30, `palkkeja löytyi ${bars.length}`);
+
+  const expected = code128c(code);
+  const widthPt = 104 * MM_TO_PT;
+  const modulePt = widthPt / expected.length;
+  const left = bars[0]!.x;
+
+  const drawn = Array.from({ length: expected.length }, (_unused, index) => {
+    const center = left + (index + 0.5) * modulePt;
+    return bars.some((bar) => center >= bar.x && center <= bar.x + bar.width) ? '1' : '0';
+  }).join('');
+
+  assert.equal(drawn, expected, 'piirretty moduulijono');
+});
+
+test('viivakoodi jätetään pois kun sitä ei ole', () => {
+  const doc = createDoc();
+  drawInvoice(doc, invoice(), cfg, null);
+  assert.equal(barRects(doc, 12).length, 0);
 });

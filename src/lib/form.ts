@@ -2,6 +2,7 @@ import type { Invoice, InvoiceConfig, LogoPosition, Member, RefMode, ReferenceOp
 import { BOM, csvField, fmtDate } from './format.js';
 import { itemsFor, parseLineItems } from './members.js';
 import { ibanPrettyOrEmpty, referenceFor } from './reference.js';
+import { virtualBarcode } from './barcode.js';
 
 export interface InvoiceForm {
   members: string;
@@ -22,6 +23,7 @@ export interface InvoiceForm {
   sharedRef: string;
   logoPos: LogoPosition;
   logoW: string;
+  barcode: boolean;
 }
 
 export const DEMO_MEMBERS = `Nimi;Sähköposti;Summa
@@ -51,7 +53,8 @@ export function defaultForm(today = new Date()): InvoiceForm {
     refStart: '1',
     sharedRef: '2026 00013',
     logoPos: 'right',
-    logoW: '45'
+    logoW: '45',
+    barcode: true
   };
 }
 
@@ -83,27 +86,40 @@ export function invoicesFor(members: Member[], form: InvoiceForm): Invoice[] {
 
   return members.map((member, index) => {
     const items = itemsFor(member, defaults, form.title);
+    const total = items.reduce((sum, item) => sum + item.amount, 0);
+    const reference = referenceFor(index, refOptions);
+
     return {
       member,
       items,
-      total: items.reduce((sum, item) => sum + item.amount, 0),
+      total,
       invoiceNo: firstNumber + index,
-      reference: referenceFor(index, refOptions)
+      reference,
+      barcode: form.barcode
+        ? virtualBarcode({ iban: form.iban, dueDate: form.dueDate, total, reference }).code ?? null
+        : null
     };
   });
 }
 
-const CSV_HEADER = 'nimi;sahkoposti;laskunumero;viite;summa;erapaiva';
+const CSV_COLUMNS = ['nimi', 'sahkoposti', 'laskunumero', 'viite', 'summa', 'erapaiva'];
 
 export function csvOf(invoices: Invoice[], dueDate: string): string {
-  const rows = invoices.map((invoice) => [
-    invoice.member.name,
-    invoice.member.email,
-    invoice.invoiceNo,
-    invoice.reference,
-    invoice.total.toFixed(2).replace('.', ','),
-    fmtDate(dueDate)
-  ].map(csvField).join(';'));
+  const withBarcode = invoices.some((invoice) => invoice.barcode);
+  const header = withBarcode ? [...CSV_COLUMNS, 'virtuaaliviivakoodi'] : CSV_COLUMNS;
 
-  return BOM + [CSV_HEADER, ...rows].join('\r\n');
+  const rows = invoices.map((invoice) => {
+    const cells = [
+      invoice.member.name,
+      invoice.member.email,
+      invoice.invoiceNo,
+      invoice.reference,
+      invoice.total.toFixed(2).replace('.', ','),
+      fmtDate(dueDate)
+    ];
+    if (withBarcode) cells.push(invoice.barcode ?? '');
+    return cells.map(csvField).join(';');
+  });
+
+  return BOM + [header.join(';'), ...rows].join('\r\n');
 }

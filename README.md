@@ -22,6 +22,11 @@ lähde koneelta mihinkään.
   - *Oma viite jokaiselle* – suomalainen viitenumero, runko = `etuliite + juokseva numero`,
     tarkistenumero 7-3-1-menetelmällä.
   - *Yhteinen viite* – sama viite kaikille. Jos annat pelkän rungon, tarkiste lisätään automaattisesti.
+- **Pankkiviivakoodi**: laskuun piirretään Code 128C -viivakoodi ja CSV-vientiin lisätään
+  54-merkkinen virtuaaliviivakoodi (versio 4) Finanssiala ry:n pankkiviivakoodi-oppaan mukaisesti.
+  Viivakoodi on 104 mm leveä ja 12 mm korkea (opas sallii 70–105 mm ja 10–12,7 mm). Vaatii
+  suomalaisen IBANin, viitenumeron ja summan alle 1 000 000 € – muuten sovellus kertoo syyn
+  eikä piirrä koodia.
 - **Tulosteet**: esikatselu selaimessa, yksi PDF jossa jokainen lasku omana sivuna,
   tai ZIP jossa oma PDF per jäsen (`1001_Matti_Meikalainen.pdf`) + `laskut.csv`.
 - **CSV-vienti**: `nimi;sahkoposti;laskunumero;viite;summa;erapaiva` – kätevä sähköpostien
@@ -98,6 +103,9 @@ npm run check     # build + testit
 ## Huomioita
 
 - Viitenumeron pituus on 4–20 numeroa, eli etuliite + juokseva numero saa olla enintään 19 numeroa.
+- Pankkiviivakoodin Code 128C -koodaus on omaa koodia (`src/lib/code128.ts`), ja testit vertaavat
+  sen tuotosta jsbarcode-kirjastoon 50 satunnaisella koodilla. Lisäksi yksi testi lukee valmiin
+  PDF:n sisältövirrasta piirretyt palkit takaisin moduulijonoksi ja vertaa sitä koodaukseen.
 - Excel-tuki kattaa `.xlsx`-muodon (luetaan ja kirjoitetaan suoraan JSZipillä, ilman taulukkokirjastoa).
   Vanhaa binääristä `.xls`-muotoa ei tueta – tallenna se Excelissä muodossa `.xlsx` tai CSV. Laskukaavat
   luetaan niiden tallennetusta arvosta, joten tallenna tiedosto Excelissä ennen tuontia.

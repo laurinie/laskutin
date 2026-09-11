@@ -2,6 +2,7 @@ import type { jsPDF } from 'jspdf';
 import type { Invoice, InvoiceConfig, Logo } from './types.js';
 import { money } from './format.js';
 import { refPretty } from './reference.js';
+import { barsOf, code128c } from './code128.js';
 
 export const A4 = { w: 210, h: 297 } as const;
 export const M = 18;
@@ -14,6 +15,9 @@ const GRAY: [number, number, number] = [110, 118, 130];
 const INK: [number, number, number] = [25, 28, 34];
 const BOX_FILL: [number, number, number] = [246, 248, 251];
 const RULE: [number, number, number] = [215, 220, 228];
+const BARCODE_W = 104;
+const BARCODE_H = 12;
+const BARCODE_BLOCK = BARCODE_H + 8;
 
 const pageNumber = (doc: jsPDF): number => doc.getCurrentPageInfo().pageNumber;
 
@@ -167,7 +171,9 @@ function drawPaymentBox(doc: jsPDF, cfg: InvoiceConfig, invoice: Invoice, top: n
     ['Eräpäivä', cfg.dueDate],
     ['Maksettava', money(invoice.total)]
   ];
-  const height = 14 + Math.ceil(rows.length / 2) * 11 + (cfg.payNote.trim() ? 7 : 0);
+  const rowsHeight = Math.ceil(rows.length / 2) * 11;
+  const noteHeight = cfg.payNote.trim() ? 7 : 0;
+  const height = 14 + rowsHeight + noteHeight + (invoice.barcode ? BARCODE_BLOCK : 0);
   const boxY = Math.max(fitOnPage(doc, top, height), CONTENT_BOTTOM - height);
 
   doc.setFillColor(...BOX_FILL);
@@ -194,10 +200,23 @@ function drawPaymentBox(doc: jsPDF, cfg: InvoiceConfig, invoice: Invoice, top: n
     doc.setFont('helvetica', 'normal');
   });
 
+  const afterRows = boxY + 18 + rowsHeight;
   if (cfg.payNote.trim()) {
     doc.setTextColor(...GRAY);
     doc.setFontSize(8.5);
-    doc.text(cfg.payNote, M + 6, boxY + height - 3.5);
+    doc.text(cfg.payNote, M + 6, afterRows + 1.5);
+  }
+  if (invoice.barcode) drawBarcode(doc, invoice.barcode, afterRows + noteHeight);
+}
+
+function drawBarcode(doc: jsPDF, code: string, top: number): void {
+  const modules = code128c(code);
+  const moduleWidth = BARCODE_W / modules.length;
+  const left = (A4.w - BARCODE_W) / 2;
+
+  doc.setFillColor(0, 0, 0);
+  for (const bar of barsOf(modules, moduleWidth)) {
+    doc.rect(left + bar.x, top, bar.width, BARCODE_H, 'F');
   }
 }
 
