@@ -36,6 +36,30 @@ lähde koneelta mihinkään.
 - Lomakkeen arvot ja logo tallentuvat selaimen localStorageen, joten ne ovat tallella
   seuraavalla käynnillä.
 
+## Sähköpostilähetys (valinnainen)
+
+Sovelluksessa on oletuksena piilotettu osio, joka lähettää jokaiselle vastaanottajalle oman
+laskun PDF-liitteenä [Brevon](https://www.brevo.com) rajapinnan kautta suoraan selaimesta.
+Osio avataan napista *Näytä sähköpostilähetys*.
+
+Käyttöönotto:
+
+1. Luo Brevo-tili (ilmainen taso riittää: 300 viestiä/vrk) ja vahvista lähettäjän osoite.
+2. Luo API-avain kohdassa Settings → SMTP & API → API Keys.
+3. Liitä avain sovelluksen kenttään, täytä lähettäjän nimi ja osoite sekä viestipohja.
+4. Lähetä ensin testi itsellesi, ja vasta sitten kaikille.
+
+Viestipohjassa voi käyttää paikkamerkkejä `{{nimi}}`, `{{laskunumero}}`, `{{viite}}`,
+`{{summa}}` ja `{{erapaiva}}`.
+
+**Avaimesta:** Brevon API-avain antaa täydet oikeudet tiliin, joten sitä **ei tallenneta**
+lainkaan – se elää vain avoimen välilehden muistissa ja katoaa sivun sulkiessa. Luo avain
+lyhyellä vanhenemisajalla ja poista se laskutuserän jälkeen. Lähettäjän nimi, osoite ja
+viestipohja tallentuvat localStorageen, avain ei.
+
+Lähetys etenee vastaanottaja kerrallaan pienellä viiveellä. Epäonnistuneet eivät keskeytä
+ajoa, vaan ne listataan lopuksi virheineen, jolloin ne voi yrittää uudelleen.
+
 ## Käyttö paikallisesti
 
 ```bash
@@ -83,6 +107,7 @@ npm run check     # build + testit
 |---|---|
 | `src/lib/` | kehysriippumaton logiikka: viitenumerot, IBAN, vastaanottajalistan jäsennys, Excel, PDF-piirto |
 | `src/components/` | React-komponentit, yksi per lomakeosio |
+| `src/lib/email.ts` | viestipohjat ja Brevon rajapinta |
 | `src/hooks/` | `usePersistentState` – lomakkeen tila localStoragessa |
 | `tests/` | Vitest-testit ja testiaineistot |
 

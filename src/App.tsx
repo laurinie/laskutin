@@ -8,6 +8,7 @@ import { ContentSection } from './components/ContentSection.js';
 import { PaymentSection } from './components/PaymentSection.js';
 import { ReferenceSection } from './components/ReferenceSection.js';
 import { OutputSection } from './components/OutputSection.js';
+import { EmailSection } from './components/EmailSection.js';
 
 const STORE_KEY = 'laskutin.v1';
 const LEGACY_STORE_KEY = 'laskuttaja.v1';
@@ -79,12 +80,14 @@ export function App() {
           status={status}
           onStatus={showStatus}
         />
+        <EmailSection invoices={invoices} config={config} logo={logo} dueDate={form.dueDate} />
       </main>
 
       <footer className="foot">
         <p>
-          Tietosi pysyvät koneellasi: lomakkeen arvot tallentuvat vain selaimen localStorageen, eikä vastaanottajalistaa
-          lähetetä verkkoon.
+          Vastaanottajien tiedot pysyvät koneellasi: lomakkeen arvot tallentuvat vain selaimen localStorageen, eikä
+          laskujen luonti ota yhteyttä verkkoon. Tiedot lähtevät ulos vain jos käytät sähköpostilähetystä, jolloin
+          lasku ja vastaanottajan osoite välitetään Brevolle.
           {storageFull && ' Huom: selaimen tallennustila on täynnä, joten asetukset eivät säily.'}
         </p>
       </footer>
