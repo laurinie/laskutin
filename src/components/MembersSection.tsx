@@ -56,7 +56,7 @@ export function MembersSection({ text, onText, invoices, columnInfo, onStatus }:
 
   async function downloadExcelTemplate() {
     try {
-      download(await templateXlsx(), 'jasenlista-pohja.xlsx');
+      download(await templateXlsx(), 'vastaanottajat-pohja.xlsx');
       onStatus('Excel-pohja ladattu. Täytä nimet ja sähköpostit, tuo sitten takaisin.');
     } catch (e) {
       onStatus('Excel-pohjan luonti epäonnistui: ' + errorMessage(e), true);
@@ -64,9 +64,9 @@ export function MembersSection({ text, onText, invoices, columnInfo, onStatus }:
   }
 
   return (
-    <Card title="1. Jäsenlista">
+    <Card title="1. Vastaanottajat">
       <p className="hint">
-        Liitä jäsenrekisteristä saatu lista, tuo <b>CSV- tai Excel-tiedosto</b> (.xlsx) tai raahaa tiedosto kenttään.
+        Liitä lista vastaanottajista, tuo <b>CSV- tai Excel-tiedosto</b> (.xlsx) tai raahaa tiedosto kenttään.
         Sarakkeet: <code>Nimi;sähköposti;summa</code> (summa valinnainen), erottimena <code>;</code>, <code>,</code> tai tab.
         Otsikkorivi tunnistetaan automaattisesti.
       </p>
@@ -104,7 +104,7 @@ export function MembersSection({ text, onText, invoices, columnInfo, onStatus }:
           type="button"
           className="secondary"
           onClick={() => {
-            download(new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' }), 'jasenlista-pohja.csv');
+            download(new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' }), 'vastaanottajat-pohja.csv');
             onStatus('CSV-pohja ladattu.');
           }}
         >
@@ -113,7 +113,7 @@ export function MembersSection({ text, onText, invoices, columnInfo, onStatus }:
         <button type="button" className="ghost" onClick={() => onText(DEMO_MEMBERS)}>
           Täytä esimerkkidata
         </button>
-        <span className="badge">{invoices.length} jäsentä</span>
+        <span className="badge">{invoices.length} vastaanottajaa</span>
       </div>
 
       <MemberTable invoices={invoices} columnInfo={columnInfo} />

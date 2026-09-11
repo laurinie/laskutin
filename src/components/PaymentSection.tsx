@@ -19,7 +19,7 @@ function IbanCheck({ iban }: { iban: string }) {
 
 function BarcodeCheck({ form, invoices }: { form: InvoiceForm; invoices: Invoice[] }) {
   const first = invoices[0];
-  if (!first) return <Check tone="warn">Pankkiviivakoodi muodostetaan, kun jäsenlistassa on rivejä.</Check>;
+  if (!first) return <Check tone="warn">Pankkiviivakoodi muodostetaan, kun vastaanottajia on lisätty.</Check>;
 
   const { code, error } = virtualBarcode({
     iban: form.iban,

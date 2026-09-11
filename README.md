@@ -1,19 +1,19 @@
 # 🧾 Laskutin
 
-Staattinen selainsovellus PDF-laskujen generointiin jäsenrekisterin nimi+sähköposti-listasta.
-Ei palvelinta, ei asennusta, ei tilien luontia – kaikki tapahtuu selaimessa, eikä jäsenlista
+Staattinen selainsovellus PDF-laskujen generointiin nimi+sähköposti-listasta.
+Ei palvelinta, ei asennusta, ei tilien luontia – kaikki tapahtuu selaimessa, eikä vastaanottajalista
 lähde koneelta mihinkään.
 
 ## Ominaisuudet
 
-- **Jäsenlistan tuonti**: liitä leikepöydältä, tuo **CSV- tai Excel-tiedosto (.xlsx)** tai raahaa
+- **Vastaanottajien tuonti**: liitä leikepöydältä, tuo **CSV- tai Excel-tiedosto (.xlsx)** tai raahaa
   tiedosto kenttään. Erottimena `;`, `,` tai tab. Valmiin pohjan saa napeista *Excel-pohja* ja
   *CSV-pohja* (samat tiedostot ovat myös repossa).
 - **Sarakkeiden tunnistus**: otsikkorivistä tunnistetaan nimi-, sähköposti- ja summasarake, myös
   erilliset `Etunimi`/`Sukunimi`-sarakkeet ja englanninkieliset otsikot (`Name`, `Email`, `Amount`).
-  Jäsennumeron kaltaiset sarakkeet ohitetaan, eikä niitä sekoiteta summaan. Ilman otsikkoriviä
+  Jäsen- tai asiakasnumeron kaltaiset sarakkeet ohitetaan, eikä niitä sekoiteta summaan. Ilman otsikkoriviä
   sarakkeet päätellään sisällöstä. Sovellus näyttää, mitkä sarakkeet se tunnisti.
-  Jäsenkohtainen summa korvaa oletussumman ko. jäsenellä.
+  Rivikohtainen summa korvaa oletussumman kyseisellä vastaanottajalla.
 - **Laskun sisältö**: otsikko, monirivinen saatesanat-teksti, laskurivit (`Kuvaus;summa`),
   kuva/logo (oikea ylänurkka, vasen tai leveä banneri) ja alatunniste.
 - **Maksutiedot**: saaja, IBAN (tarkistetaan mod-97-algoritmilla), BIC, laskun päivä,
@@ -28,9 +28,9 @@ lähde koneelta mihinkään.
   suomalaisen IBANin, viitenumeron ja summan alle 1 000 000 € – muuten sovellus kertoo syyn
   eikä piirrä koodia.
 - **Tulosteet**: esikatselu selaimessa, yksi PDF jossa jokainen lasku omana sivuna,
-  tai ZIP jossa oma PDF per jäsen (`1001_Matti_Meikalainen.pdf`) + `laskut.csv`.
+  tai ZIP jossa oma PDF per vastaanottaja (`1001_Matti_Meikalainen.pdf`) + `laskut.csv`.
 - **CSV-vienti**: `nimi;sahkoposti;laskunumero;viite;summa;erapaiva` – kätevä sähköpostien
-  massalähetykseen (mail merge), jolla PDF:t toimitetaan jäsenille.
+  massalähetykseen (mail merge), jolla PDF:t toimitetaan vastaanottajille.
 - Lomakkeen arvot ja logo tallentuvat selaimen localStorageen, joten ne ovat tallella
   seuraavalla käynnillä.
 
@@ -79,7 +79,7 @@ npm run check     # build + testit
 
 | Hakemisto | Sisältö |
 |---|---|
-| `src/lib/` | kehysriippumaton logiikka: viitenumerot, IBAN, jäsenlistan jäsennys, Excel, PDF-piirto |
+| `src/lib/` | kehysriippumaton logiikka: viitenumerot, IBAN, vastaanottajalistan jäsennys, Excel, PDF-piirto |
 | `src/components/` | React-komponentit, yksi per lomakeosio |
 | `src/hooks/` | `usePersistentState` – lomakkeen tila localStoragessa |
 | `tests/` | Vitest-testit ja testiaineistot |
@@ -95,8 +95,8 @@ npm run check     # build + testit
 | `src/styles.css` | ulkoasu (vaalea ja tumma tila) |
 | `public/CNAME` | oma verkkotunnus GitHub Pagesille |
 | `.github/workflows/deploy.yml` | testaa, kääntää ja julkaisee |
-| `esimerkki-jasenet.csv` | esimerkkiaineisto tuontia varten |
-| `jasenlista-pohja.xlsx` / `.csv` | pohjat jäsenlistalle (samat kuin napeista) |
+| `esimerkki-vastaanottajat.csv` | esimerkkiaineisto tuontia varten |
+| `vastaanottajat-pohja.xlsx` / `.csv` | pohjat vastaanottajalistalle (samat kuin napeista) |
 | `esimerkki-lasku.pdf` | esimerkkituloste |
 | `LICENSE` | MIT-lisenssi |
 
@@ -109,7 +109,7 @@ npm run check     # build + testit
 - Excel-tuki kattaa `.xlsx`-muodon (luetaan ja kirjoitetaan suoraan JSZipillä, ilman taulukkokirjastoa).
   Vanhaa binääristä `.xls`-muotoa ei tueta – tallenna se Excelissä muodossa `.xlsx` tai CSV. Laskukaavat
   luetaan niiden tallennetusta arvosta, joten tallenna tiedosto Excelissä ennen tuontia.
-- Jäsenkohtainen summa CSV:ssä korvaa laskurivit yhdellä rivillä (kuvaus otetaan ensimmäiseltä laskuriviltä).
+- Rivikohtainen summa CSV:ssä korvaa laskurivit yhdellä rivillä (kuvaus otetaan ensimmäiseltä laskuriviltä).
 - PDF käyttää Helvetica-fonttia, joka tukee skandeja (ä, ö, å).
 - Mahdollinen jatkokehitys: virtuaaliviivakoodi / QR-koodi maksuosioon, laskujen lähetys
   suoraan sähköpostilla (vaatisi palvelimen tai esim. Mailgun-integraation).

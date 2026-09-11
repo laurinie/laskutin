@@ -154,7 +154,7 @@ export async function templateXlsx(): Promise<Blob> {
 
   zip.file('xl/workbook.xml',
     `${XML_HEADER}<workbook xmlns="${SHEET_NS}" xmlns:r="${REL_NS}">` +
-    `<sheets><sheet name="Jäsenet" sheetId="1" r:id="rId1"/></sheets></workbook>`);
+    `<sheets><sheet name="Vastaanottajat" sheetId="1" r:id="rId1"/></sheets></workbook>`);
 
   zip.file('xl/_rels/workbook.xml.rels',
     `${XML_HEADER}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +

@@ -9,5 +9,5 @@ laskut*.csv
 *.pdf
 *.csv
 !esimerkki-lasku.pdf
-!esimerkki-jasenet.csv
-!jasenlista-pohja.csv
+!esimerkki-vastaanottajat.csv
+!vastaanottajat-pohja.csv

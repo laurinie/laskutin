@@ -56,7 +56,7 @@ export function App() {
     <>
       <header className="topbar">
         <h1>🧾 Laskutin</h1>
-        <p className="sub">Generoi PDF-laskut jäsenlistasta. Kaikki tapahtuu selaimessa – tietoja ei lähetetä mihinkään.</p>
+        <p className="sub">Generoi PDF-laskut vastaanottajalistasta. Kaikki tapahtuu selaimessa – tietoja ei lähetetä mihinkään.</p>
       </header>
 
       <main>
@@ -82,7 +82,7 @@ export function App() {
 
       <footer className="foot">
         <p>
-          Tietosi pysyvät koneellasi: lomakkeen arvot tallentuvat vain selaimen localStorageen, eikä jäsenlistaa
+          Tietosi pysyvät koneellasi: lomakkeen arvot tallentuvat vain selaimen localStorageen, eikä vastaanottajalistaa
           lähetetä verkkoon.
           {storageFull && ' Huom: selaimen tallennustila on täynnä, joten asetukset eivät säily.'}
         </p>

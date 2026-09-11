@@ -20,7 +20,7 @@ export function OutputSection({ invoices, config, logo, csv, status, onStatus }:
 
   function run(action: (invoices: Invoice[]) => Promise<void>) {
     if (!invoices.length) {
-      onStatus('Lisää ensin jäsenlista.', true);
+      onStatus('Lisää ensin vastaanottajat.', true);
       return;
     }
     setBusy(true);
@@ -53,7 +53,7 @@ export function OutputSection({ invoices, config, logo, csv, status, onStatus }:
 
   const exportCsv = () => {
     if (!invoices.length) {
-      onStatus('Lisää ensin jäsenlista.', true);
+      onStatus('Lisää ensin vastaanottajat.', true);
       return;
     }
     download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'laskut.csv');
@@ -65,7 +65,7 @@ export function OutputSection({ invoices, config, logo, csv, status, onStatus }:
       <div className="row">
         <button type="button" onClick={preview} disabled={busy}>👁 Esikatsele ensimmäinen</button>
         <button type="button" onClick={onePdf} disabled={busy}>📄 Yksi PDF (kaikki sivuina)</button>
-        <button type="button" onClick={zip} disabled={busy}>🗂 ZIP – oma PDF per jäsen</button>
+        <button type="button" onClick={zip} disabled={busy}>🗂 ZIP – oma PDF per vastaanottaja</button>
         <button type="button" className="secondary" onClick={exportCsv}>⬇️ Vie CSV</button>
       </div>
 
