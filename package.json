@@ -3,12 +3,11 @@
   "version": "1.0.0",
   "description": "PDF-laskujen generointi jäsenlistasta – staattinen selainsovellus",
   "scripts": {
-    "test": "npm run build && node --test tests/*.test.mjs",
-    "build": "tsc",
-    "watch": "tsc --watch",
-    "vendor": "node scripts/vendor.mjs",
-    "verify": "node scripts/verify-vendor.mjs",
-    "check": "npm run verify && npm test"
+    "test": "vitest run",
+    "build": "tsc --noEmit && vite build",
+    "check": "npm run build && npm test",
+    "dev": "vite",
+    "preview": "vite preview"
   },
   "repository": {
     "type": "git",
@@ -23,9 +22,19 @@
   },
   "homepage": "https://github.com/laurinie/laskutin#readme",
   "devDependencies": {
+    "@types/node": "^22.20.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.0"
+  },
+  "private": "true",
+  "dependencies": {
     "jspdf": "^4.2.1",
     "jszip": "^3.10.2",
-    "typescript": "^7.0.2"
-  },
-  "private": "true"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
 }

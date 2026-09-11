@@ -1,20 +1,13 @@
-# Generoidut laskut ja viennit – älä committaa jäsentietoja
+node_modules/
+dist/
+.DS_Store
+
 laskut*.pdf
 laskut*.zip
 laskut*.csv
 
-# Kaikki PDF:t ja CSV:t paitsi mukana toimitettavat esimerkit
 *.pdf
 *.csv
 !esimerkki-lasku.pdf
 !esimerkki-jasenet.csv
 !jasenlista-pohja.csv
-
-# omat testitiedostot
-_testi*
-
-.DS_Store
-node_modules/
-
-# Käännetty JS (dist/) ja vendoroidut kirjastot (vendor/) KUULUVAT versionhallintaan:
-# GitHub Pages tarjoilee ne sellaisenaan, eikä julkaisu vaadi build-vaihetta.

@@ -31,105 +31,68 @@ lähde koneelta mihinkään.
 
 ## Käyttö paikallisesti
 
-Avaa `index.html` selaimessa, tai käynnistä kevyt palvelin (suositeltu, jotta kaikki
-selaintoiminnot varmasti toimivat):
-
 ```bash
-python3 -m http.server 8000
-# avaa http://localhost:8000
+npm install
+npm run dev       # http://localhost:5173
 ```
 
 ## Julkaisu GitHub Pagesiin
 
-```bash
-git init -b main
-git add .
-git commit -m "Laskutin: PDF-laskugeneraattori"
-git remote add origin git@github.com:<käyttäjä>/<repo>.git
-git push -u origin main
-```
+Julkaisu tapahtuu GitHub Actionsilla: jokainen push `main`-haaraan ajaa testit, kääntää
+sovelluksen ja julkaisee `dist/`-hakemiston Pagesiin (`.github/workflows/deploy.yml`).
 
-Sen jälkeen GitHubissa: **Settings → Pages → Source: Deploy from a branch → main / (root) → Save**.
-Sovellus on parin minuutin päästä osoitteessa `https://<käyttäjä>.github.io/<repo>/`.
+Ota käyttöön kerran: **Settings → Pages → Source: GitHub Actions**. Oma verkkotunnus
+(`laskutin.kettuniemi.fi`) tulee `public/CNAME`-tiedostosta, joka kopioituu buildin mukana.
 
-Tämä sovellus on julkaistu osoitteessa **https://laskutin.kettuniemi.fi** – oma verkkotunnus
-asetetaan kohdassa Settings → Pages → Custom domain, mikä luo repoon `CNAME`-tiedoston.
-Älä poista sitä, tai domain irtoaa julkaisusta.
+Käännetty tuloste ei ole versionhallinnassa – buildin tekee CI.
 
-Sivusto on täysin staattinen (`index.html`, `styles.css`, `app.js`), joten mikä tahansa
-staattinen hosting toimii yhtä hyvin.
+## Tekniikka
 
-## Riippuvuudet ja turvallisuus
-
-Kirjastot ovat repossa `vendor/`-hakemistossa – **sovellus ei lataa mitään ulkopuolelta**.
-Sivun voi ajaa täysin verkotta, eikä CDN:n kaatuminen tai kaappaus voi vaikuttaa siihen.
-
-| Kirjasto | Versio | Lisenssi |
-|---|---|---|
-| [jsPDF](https://github.com/parallax/jsPDF) | 4.2.1 | MIT |
-| [JSZip](https://stuk.github.io/jszip/) | 3.10.2 | MIT tai GPLv3 |
-
-Jokaisella tiedostolla on `index.html`:ssä [SRI](https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_integrity)-tarkiste
-(`integrity="sha384-…"`). Jos tiedosto muuttuu tavullakaan, selain kieltäytyy suorittamasta sitä.
-Tarkisteet ovat myös `vendor/versions.json`-tiedostossa.
-
-```bash
-npm run verify    # tarkistaa että vendor-tiedostot vastaavat tarkisteita
-npm run vendor    # päivittää vendor-tiedostot ja tarkisteet node_modulesista
-```
-
-Kirjastot asennetaan `npm install`illa vain kehitystä varten (tyypit ja `npm run vendor`);
-itse julkaistu sivusto ei tarvitse `node_modules`-hakemistoa.
-
-## Kehitys
-
-Lähdekoodi on TypeScriptiä hakemistossa `src/`, ja käännetty JavaScript menee hakemistoon
-`dist/`. Molemmat ovat versionhallinnassa, joten GitHub Pages tarjoilee sivuston ilman
-erillistä build-vaihetta.
-
-```bash
-npm install       # kehitysriippuvuudet (TypeScript + kirjastojen tyypit)
-npm run build     # kääntää src/ -> dist/
-npm run watch     # kääntää taustalla muutoksen yhteydessä
-npm test          # kääntää ja ajaa yksikkötestit
-npm run check     # verify + test
-```
-
-**Muista ajaa `npm run build` ennen committia**, muuten `dist/` jää vanhaksi eivätkä
-muutokset näy julkaistulla sivulla.
-
-Moduulit:
-
-| Tiedosto | Vastuu |
+| | |
 |---|---|
-| `src/format.ts` | rahan, päivien ja tekstin muotoilu |
-| `src/reference.ts` | viitenumero (7-3-1) ja IBAN-tarkistus (mod 97) |
-| `src/members.ts` | jäsenlistan jäsennys ja sarakkeiden tunnistus |
-| `src/xlsx.ts` | Excel-tiedostojen luku ja pohjan kirjoitus |
-| `src/pdf.ts` | laskun piirto – ei DOM-riippuvuuksia, joten testattavissa Nodessa |
-| `src/app.ts` | käyttöliittymä, lomakkeen tila ja lataukset |
+| React 19 + TypeScript | käyttöliittymä |
+| Vite | kehityspalvelin ja build |
+| Vitest | testit |
+| [jsPDF](https://github.com/parallax/jsPDF) | PDF-piirto (MIT) |
+| [JSZip](https://stuk.github.io/jszip/) | ZIP ja .xlsx (MIT tai GPLv3) |
 
-Testit (`tests/`) ajetaan Noden omalla test runnerilla. Ne kattavat viitenumerot, IBANin,
-jäsenlistan jäsennyksen, Excel-luvun (myös openpyxl:llä tuotetulla kiintotiedostolla) ja
-PDF:n piirron samalla jsPDF-versiolla, joka on vendoroitu selainta varten.
+Kirjastot niputetaan buildissa omaan bundleen npm:stä – sovellus ei lataa mitään CDN:stä
+eikä muualta verkosta. Riippuvuuksien eheys tulee `package-lock.json`:n tarkisteista, ja
+`npm ci` asentaa tasan lukitut versiot. jsPDF ja JSZip ladataan dynaamisesti vasta kun
+laskuja luodaan tai Excel-tiedostoa käsitellään, joten sivun ensilataus pysyy kevyenä.
+
+```bash
+npm run dev       # kehityspalvelin
+npm run build     # tyyppitarkistus + tuotantobuild dist-hakemistoon
+npm run preview   # tuotantobuildin esikatselu
+npm test          # Vitest
+npm run check     # build + testit
+```
+
+## Rakenne
+
+| Hakemisto | Sisältö |
+|---|---|
+| `src/lib/` | kehysriippumaton logiikka: viitenumerot, IBAN, jäsenlistan jäsennys, Excel, PDF-piirto |
+| `src/components/` | React-komponentit, yksi per lomakeosio |
+| `src/hooks/` | `usePersistentState` – lomakkeen tila localStoragessa |
+| `tests/` | Vitest-testit ja testiaineistot |
+
+`src/lib` ei tunne Reactia eikä DOM:ia, joten sama koodi ajetaan selaimessa ja testeissä.
 
 ## Tiedostot
 
 | Tiedosto | Sisältö |
 |---|---|
-| `index.html` | Lomake ja sivun rakenne |
-| `styles.css` | Ulkoasu (tukee vaaleaa ja tummaa tilaa) |
-| `src/*.ts` | TypeScript-lähdekoodi |
-| `dist/*.js` | Käännetty JavaScript, jota selain ajaa |
-| `vendor/` | Kirjastot ja niiden lisenssit + `versions.json` tarkisteineen |
-| `tests/` | Yksikkötestit ja testiaineistot |
-| `scripts/` | `vendor.mjs` (päivitys) ja `verify-vendor.mjs` (tarkistus) |
-| `esimerkki-jasenet.csv` | Esimerkkiaineisto tuontia varten |
-| `jasenlista-pohja.xlsx` | Excel-pohja jäsenlistalle (sama kuin *Excel-pohja*-napista) |
-| `jasenlista-pohja.csv` | CSV-pohja jäsenlistalle |
-| `esimerkki-lasku.pdf` | Esimerkkituloste (2 laskua, testilogolla) |
+| `index.html` | Viten entry-tiedosto |
+| `src/main.tsx`, `src/App.tsx` | sovelluksen juuri |
+| `src/styles.css` | ulkoasu (vaalea ja tumma tila) |
+| `public/CNAME` | oma verkkotunnus GitHub Pagesille |
+| `.github/workflows/deploy.yml` | testaa, kääntää ja julkaisee |
+| `esimerkki-jasenet.csv` | esimerkkiaineisto tuontia varten |
+| `jasenlista-pohja.xlsx` / `.csv` | pohjat jäsenlistalle (samat kuin napeista) |
+| `esimerkki-lasku.pdf` | esimerkkituloste |
 | `LICENSE` | MIT-lisenssi |
-| `CNAME` | Oma verkkotunnus GitHub Pagesille (`laskutin.kettuniemi.fi`) |
 
 ## Huomioita
 
@@ -146,5 +109,4 @@ PDF:n piirron samalla jsPDF-versiolla, joka on vendoroitu selainta varten.
 
 [MIT](LICENSE) © 2026 laurinie
 
-Vendoroidut kirjastot omilla lisensseillään: jsPDF (MIT) ja JSZip (MIT / GPLv3, kaksoislisenssi),
-lisenssitekstit hakemistossa `vendor/`.
+Riippuvuudet omilla lisensseillään: React (MIT), jsPDF (MIT) ja JSZip (MIT / GPLv3, kaksoislisenssi).
