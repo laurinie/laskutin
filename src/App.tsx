@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import type { Logo } from './lib/types.js';
-import { configOf, csvOf, defaultForm, invoicesFor, type InvoiceForm } from './lib/form.js';
-import { parseMembers } from './lib/members.js';
+import { configOf, csvOf, defaultForm, invoicesFor, migrateForm, type InvoiceForm } from './lib/form.js';
+import { parseRecipients } from './lib/recipients.js';
 import { usePersistentState } from './hooks/usePersistentState.js';
-import { MembersSection } from './components/MembersSection.js';
+import { RecipientsSection } from './components/RecipientsSection.js';
 import { ContentSection } from './components/ContentSection.js';
 import { PaymentSection } from './components/PaymentSection.js';
 import { ReferenceSection } from './components/ReferenceSection.js';
@@ -11,6 +11,7 @@ import { OutputSection } from './components/OutputSection.js';
 
 const STORE_KEY = 'laskutin.v1';
 const LEGACY_STORE_KEY = 'laskuttaja.v1';
+const LOGO_KEY = 'laskutin.logo';
 const MAX_STORED_LOGO = 1_500_000;
 
 interface Status {
@@ -22,9 +23,9 @@ export function App() {
   const { value: form, setValue: setForm, storageFull } = usePersistentState<InvoiceForm>(
     STORE_KEY,
     defaultForm,
-    LEGACY_STORE_KEY
+    { legacyKey: LEGACY_STORE_KEY, migrate: migrateForm }
   );
-  const { value: logo, setValue: setLogo } = usePersistentState<Logo | null>('laskutin.logo', () => null);
+  const { value: logo, setValue: setLogo } = usePersistentState<Logo | null>(LOGO_KEY, () => null);
   const [status, setStatus] = useState<Status>({ message: '', isError: false });
 
   const setField = <K extends keyof InvoiceForm>(key: K, value: InvoiceForm[K]) =>
@@ -32,8 +33,8 @@ export function App() {
 
   const showStatus = (message: string, isError = false) => setStatus({ message, isError });
 
-  const { members, columnInfo } = useMemo(() => parseMembers(form.members), [form.members]);
-  const invoices = useMemo(() => invoicesFor(members, form), [members, form]);
+  const { recipients, columnInfo } = useMemo(() => parseRecipients(form.recipients), [form.recipients]);
+  const invoices = useMemo(() => invoicesFor(recipients, form), [recipients, form]);
   const config = useMemo(() => configOf(form), [form]);
   const csv = useMemo(() => csvOf(invoices, form.dueDate), [invoices, form.dueDate]);
 
@@ -60,9 +61,9 @@ export function App() {
       </header>
 
       <main>
-        <MembersSection
-          text={form.members}
-          onText={(text) => setField('members', text)}
+        <RecipientsSection
+          text={form.recipients}
+          onText={(text) => setField('recipients', text)}
           invoices={invoices}
           columnInfo={columnInfo}
           onStatus={showStatus}

@@ -1,4 +1,4 @@
-import type { ColumnMap, LineItem, Member } from './types.js';
+import type { ColumnMap, LineItem, Recipient } from './types.js';
 import { isEmail, parseAmount } from './format.js';
 
 function separatorOf(line: string): string {
@@ -67,12 +67,12 @@ export function describeMap(map: ColumnMap | null, header: string[]): string {
   return parts.join(' · ');
 }
 
-export function rowToMember(cols: string[], map: ColumnMap | null): Member {
-  const mapped = map && rowToMemberByHeader(cols, map);
-  return mapped ?? rowToMemberHeuristic(cols);
+export function rowToRecipient(cols: string[], map: ColumnMap | null): Recipient {
+  const mapped = map && rowToRecipientByHeader(cols, map);
+  return mapped ?? rowToRecipientHeuristic(cols);
 }
 
-function rowToMemberByHeader(cols: string[], map: ColumnMap): Member | null {
+function rowToRecipientByHeader(cols: string[], map: ColumnMap): Recipient | null {
   const cell = (i: number | undefined): string => (i === undefined ? '' : String(cols[i] ?? '').trim());
 
   const email = cell(map.email) || cols.find(isEmail) || '';
@@ -87,7 +87,7 @@ function rowToMemberByHeader(cols: string[], map: ColumnMap): Member | null {
   };
 }
 
-export function rowToMemberHeuristic(cols: string[]): Member {
+export function rowToRecipientHeuristic(cols: string[]): Recipient {
   const email = cols.find(isEmail) || cols.find((col) => col.includes('@')) || '';
   const rest = cols.filter((col) => col !== email);
   const name = rest.find((col) => col && parseAmount(col) === null) || rest[0] || '';
@@ -101,21 +101,21 @@ export function rowToMemberHeuristic(cols: string[]): Member {
   };
 }
 
-export interface ParsedMembers {
-  members: Member[];
+export interface ParsedRecipients {
+  recipients: Recipient[];
   columnInfo: string;
 }
 
-export function parseMembers(text: string): ParsedMembers {
+export function parseRecipients(text: string): ParsedRecipients {
   const rows = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map(splitCols);
-  if (!rows.length) return { members: [], columnInfo: '' };
+  if (!rows.length) return { recipients: [], columnInfo: '' };
 
   const [firstRow] = rows as [string[], ...string[][]];
   const hasHeader = !firstRow.some(isEmail);
   const map = hasHeader ? headerMap(firstRow) : null;
 
   return {
-    members: (hasHeader ? rows.slice(1) : rows).map((cols) => rowToMember(cols, map)),
+    recipients: (hasHeader ? rows.slice(1) : rows).map((cols) => rowToRecipient(cols, map)),
     columnInfo: hasHeader ? describeMap(map, firstRow) : ''
   };
 }
@@ -129,8 +129,8 @@ export function parseLineItems(text: string): LineItem[] {
   });
 }
 
-export function itemsFor(member: Member, defaults: LineItem[], fallbackDesc: string): LineItem[] {
+export function itemsFor(recipient: Recipient, defaults: LineItem[], fallbackDesc: string): LineItem[] {
   const desc = fallbackDesc || 'Laskurivi';
-  if (member.amount === null) return defaults.length ? defaults : [{ desc, amount: 0 }];
-  return [{ desc: defaults[0]?.desc || desc, amount: member.amount }];
+  if (recipient.amount === null) return defaults.length ? defaults : [{ desc, amount: 0 }];
+  return [{ desc: defaults[0]?.desc || desc, amount: recipient.amount }];
 }

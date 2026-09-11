@@ -35,7 +35,7 @@ export function OutputSection({ invoices, config, logo, csv, status, onStatus }:
       if (current) URL.revokeObjectURL(current);
       return URL.createObjectURL(blob);
     });
-    onStatus(`Esikatselu: ${first!.member.name}. Muut laskut noudattavat samaa ulkoasua.`);
+    onStatus(`Esikatselu: ${first!.recipient.name}. Muut laskut noudattavat samaa ulkoasua.`);
   });
 
   const onePdf = () => run(async (all) => {

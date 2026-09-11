@@ -2,10 +2,10 @@ import type { Invoice } from '../lib/types.js';
 import { money } from '../lib/format.js';
 import { refPretty } from '../lib/reference.js';
 
-export function MemberTable({ invoices, columnInfo }: { invoices: Invoice[]; columnInfo: string }) {
+export function RecipientTable({ invoices, columnInfo }: { invoices: Invoice[]; columnInfo: string }) {
   if (!invoices.length) return null;
 
-  const missingEmails = invoices.filter((invoice) => invoice.member.badEmail).length;
+  const missingEmails = invoices.filter((invoice) => invoice.recipient.badEmail).length;
   const notes = [
     columnInfo && `Tunnistetut sarakkeet → ${columnInfo}`,
     missingEmails && `${missingEmails} riviltä puuttuu kelvollinen sähköposti`
@@ -24,9 +24,9 @@ export function MemberTable({ invoices, columnInfo }: { invoices: Invoice[]; col
             {invoices.map((invoice) => (
               <tr key={invoice.invoiceNo}>
                 <td className="num">{invoice.invoiceNo}</td>
-                <td>{invoice.member.name}</td>
-                <td className={invoice.member.badEmail ? 'bad' : undefined}>
-                  {invoice.member.email || '– puuttuu –'}
+                <td>{invoice.recipient.name}</td>
+                <td className={invoice.recipient.badEmail ? 'bad' : undefined}>
+                  {invoice.recipient.email || '– puuttuu –'}
                 </td>
                 <td>{refPretty(invoice.reference) || '–'}</td>
                 <td className="num">{money(invoice.total)}</td>

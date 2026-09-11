@@ -1,4 +1,4 @@
-export interface Member {
+export interface Recipient {
   name: string;
   email: string;
   amount: number | null;
@@ -11,7 +11,7 @@ export interface LineItem {
 }
 
 export interface Invoice {
-  member: Member;
+  recipient: Recipient;
   items: LineItem[];
   total: number;
   invoiceNo: number;

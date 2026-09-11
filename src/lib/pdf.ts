@@ -102,11 +102,11 @@ function drawRecipient(doc: jsPDF, invoice: Invoice, top: number): number {
 
   doc.setTextColor(...INK);
   doc.setFontSize(11.5).setFont('helvetica', 'bold');
-  doc.text(invoice.member.name, M, top + 6);
+  doc.text(invoice.recipient.name, M, top + 6);
 
   doc.setFont('helvetica', 'normal').setFontSize(10);
   doc.setTextColor(...GRAY);
-  doc.text(invoice.member.email, M, top + 11.5);
+  doc.text(invoice.recipient.email, M, top + 11.5);
   return top + 16;
 }
 

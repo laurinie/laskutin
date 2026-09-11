@@ -29,7 +29,7 @@ export async function zipOfInvoices(
   const zip = new JSZip();
 
   for (const [index, invoice] of invoices.entries()) {
-    zip.file(`${invoice.invoiceNo}_${slug(invoice.member.name)}.pdf`, await singleInvoiceBlob(invoice, config, logo));
+    zip.file(`${invoice.invoiceNo}_${slug(invoice.recipient.name)}.pdf`, await singleInvoiceBlob(invoice, config, logo));
     if (index % 20 === 0) {
       onProgress?.(index + 1, invoices.length);
       await new Promise((resolve) => setTimeout(resolve, 0));

@@ -1,20 +1,28 @@
 import { useEffect, useState } from 'react';
 
-function restore<T>(key: string, legacyKey: string | undefined, fallback: () => T): T {
+export interface PersistOptions<T> {
+  legacyKey?: string;
+  migrate?: (stored: Record<string, unknown>) => Partial<T>;
+}
+
+function restore<T>(key: string, fallback: () => T, options: PersistOptions<T>): T {
   try {
-    const raw = localStorage.getItem(key) ?? (legacyKey ? localStorage.getItem(legacyKey) : null);
+    const raw = localStorage.getItem(key) ?? (options.legacyKey ? localStorage.getItem(options.legacyKey) : null);
     if (!raw) return fallback();
 
     const stored = JSON.parse(raw) as T;
     const isPlainObject = stored !== null && typeof stored === 'object' && !Array.isArray(stored);
-    return isPlainObject ? { ...fallback(), ...stored } : stored;
+    if (!isPlainObject) return stored;
+
+    const migrated = options.migrate?.(stored as Record<string, unknown>) ?? stored;
+    return { ...fallback(), ...migrated };
   } catch {
     return fallback();
   }
 }
 
-export function usePersistentState<T>(key: string, initial: () => T, legacyKey?: string) {
-  const [value, setValue] = useState<T>(() => restore(key, legacyKey, initial));
+export function usePersistentState<T>(key: string, initial: () => T, options: PersistOptions<T> = {}) {
+  const [value, setValue] = useState<T>(() => restore(key, initial, options));
   const [storageFull, setStorageFull] = useState(false);
 
   useEffect(() => {

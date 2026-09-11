@@ -5,9 +5,9 @@ import { download } from '../lib/download.js';
 import { errorMessage } from '../lib/format.js';
 import { DEMO_MEMBERS } from '../lib/form.js';
 import { Card } from './Card.js';
-import { MemberTable } from './MemberTable.js';
+import { RecipientTable } from './RecipientTable.js';
 
-interface MembersSectionProps {
+interface RecipientsSectionProps {
   text: string;
   onText: (text: string) => void;
   invoices: Invoice[];
@@ -17,7 +17,7 @@ interface MembersSectionProps {
 
 const isExcel = (file: File): boolean => /\.xlsx$/i.test(file.name) || /spreadsheetml/.test(file.type);
 
-export function MembersSection({ text, onText, invoices, columnInfo, onStatus }: MembersSectionProps) {
+export function RecipientsSection({ text, onText, invoices, columnInfo, onStatus }: RecipientsSectionProps) {
   const fileInput = useRef<HTMLInputElement>(null);
   const dropZone = useRef<HTMLTextAreaElement>(null);
 
@@ -116,7 +116,7 @@ export function MembersSection({ text, onText, invoices, columnInfo, onStatus }:
         <span className="badge">{invoices.length} vastaanottajaa</span>
       </div>
 
-      <MemberTable invoices={invoices} columnInfo={columnInfo} />
+      <RecipientTable invoices={invoices} columnInfo={columnInfo} />
     </Card>
   );
 }

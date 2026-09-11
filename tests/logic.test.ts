@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 
 import { money, parseAmount, fmtDate, isEmail, slug, csvField } from '../src/lib/format.js';
 import { refWithCheck, refIsValid, refPretty, referenceFor, ibanValid, ibanPretty } from '../src/lib/reference.js';
-import { parseMembers, parseLineItems, itemsFor, splitCols } from '../src/lib/members.js';
-import type { Member, ReferenceOptions } from '../src/lib/types.js';
+import { parseRecipients, parseLineItems, itemsFor, splitCols } from '../src/lib/recipients.js';
+import { migrateForm } from '../src/lib/form.js';
+import type { Recipient, ReferenceOptions } from '../src/lib/types.js';
 
-const member = (over: Partial<Member> = {}): Member =>
+const recipient = (over: Partial<Recipient> = {}): Recipient =>
   ({ name: 'Testi', email: 'testi@example.com', amount: null, badEmail: false, ...over });
 
 test('viitenumeron tarkiste (7-3-1)', () => {
@@ -48,31 +49,31 @@ test('muotoilut', () => {
 });
 
 test('jäsenlista otsikkorivin kanssa', () => {
-  const { members, columnInfo } = parseMembers(
+  const { recipients, columnInfo } = parseRecipients(
     'Jäsennumero;Nimi;Sähköposti;Jäsenmaksu\n1;Matti Meikäläinen;matti@example.com;40,00\n2;Maija Virtanen;maija@example.com;'
   );
-  assert.equal(members.length, 2);
-  assert.deepEqual([members[0]!.name, members[0]!.email, members[0]!.amount],
+  assert.equal(recipients.length, 2);
+  assert.deepEqual([recipients[0]!.name, recipients[0]!.email, recipients[0]!.amount],
     ['Matti Meikäläinen', 'matti@example.com', 40]);
-  assert.equal(members[1]!.amount, null, 'tyhjä summa ei ole 0');
+  assert.equal(recipients[1]!.amount, null, 'tyhjä summa ei ole 0');
   assert.match(columnInfo, /summa: Jäsenmaksu/);
   assert.ok(!/Jäsennumero/.test(columnInfo), 'jäsennumeroa ei tulkita summaksi');
 });
 
 test('etunimi- ja sukunimisarakkeet yhdistetään', () => {
-  const { members } = parseMembers('Etunimi,Sukunimi,Email,Amount\nMatti,Meikäläinen,matti@example.com,25.50');
-  assert.equal(members[0]!.name, 'Matti Meikäläinen');
-  assert.equal(members[0]!.amount, 25.5);
+  const { recipients } = parseRecipients('Etunimi,Sukunimi,Email,Amount\nMatti,Meikäläinen,matti@example.com,25.50');
+  assert.equal(recipients[0]!.name, 'Matti Meikäläinen');
+  assert.equal(recipients[0]!.amount, 25.5);
 });
 
 test('ilman otsikkoriviä sarakkeet päätellään sisällöstä', () => {
-  const { members } = parseMembers('Matti Meikäläinen;matti@example.com;40,00\nMaija Virtanen;maija@example.com');
-  assert.deepEqual(members.map((m) => [m.name, m.amount]), [['Matti Meikäläinen', 40], ['Maija Virtanen', null]]);
+  const { recipients } = parseRecipients('Matti Meikäläinen;matti@example.com;40,00\nMaija Virtanen;maija@example.com');
+  assert.deepEqual(recipients.map((m) => [m.name, m.amount]), [['Matti Meikäläinen', 40], ['Maija Virtanen', null]]);
 });
 
 test('puuttuva sähköposti merkitään', () => {
-  const { members } = parseMembers('Nimi;Sähköposti\nMatti Meikäläinen;ei-sposti');
-  assert.ok(members[0]!.badEmail);
+  const { recipients } = parseRecipients('Nimi;Sähköposti\nMatti Meikäläinen;ei-sposti');
+  assert.ok(recipients[0]!.badEmail);
 });
 
 test('lainausmerkit ja erottimet', () => {
@@ -84,9 +85,21 @@ test('laskurivit ja jäsenkohtainen summa', () => {
   const base = parseLineItems('Jäsenmaksu 2026;40,00\nLehtitilaus;12,50');
   assert.deepEqual(base, [{ desc: 'Jäsenmaksu 2026', amount: 40 }, { desc: 'Lehtitilaus', amount: 12.5 }]);
 
-  const withoutOwn = itemsFor(member(), base, 'Lasku');
+  const withoutOwn = itemsFor(recipient(), base, 'Lasku');
   assert.equal(withoutOwn.length, 2, 'ilman omaa summaa käytetään oletusrivejä');
 
-  const withOwn = itemsFor(member({ amount: 20 }), base, 'Lasku');
+  const withOwn = itemsFor(recipient({ amount: 20 }), base, 'Lasku');
   assert.deepEqual(withOwn, [{ desc: 'Jäsenmaksu 2026', amount: 20 }], 'oma summa korvaa rivit');
+});
+
+test('vanha tallennettu members-kenttä siirtyy recipients-kenttään', () => {
+  const migrated = migrateForm({ members: 'Matti;matti@example.com', title: 'Lasku', iban: 'FI21' });
+  assert.equal(migrated.recipients, 'Matti;matti@example.com');
+  assert.equal(migrated.title, 'Lasku');
+  assert.equal('members' in migrated, false);
+});
+
+test('uusi tallennettu tila säilyy sellaisenaan', () => {
+  const stored = { recipients: 'Maija;maija@example.com', title: 'Lasku' };
+  assert.deepEqual(migrateForm(stored), stored);
 });

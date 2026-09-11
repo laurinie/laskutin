@@ -1,11 +1,11 @@
-import type { Invoice, InvoiceConfig, LogoPosition, Member, RefMode, ReferenceOptions } from './types.js';
+import type { Invoice, InvoiceConfig, LogoPosition, Recipient, RefMode, ReferenceOptions } from './types.js';
 import { BOM, csvField, fmtDate } from './format.js';
-import { itemsFor, parseLineItems } from './members.js';
+import { itemsFor, parseLineItems } from './recipients.js';
 import { ibanPrettyOrEmpty, referenceFor } from './reference.js';
 import { virtualBarcode } from './barcode.js';
 
 export interface InvoiceForm {
-  members: string;
+  recipients: string;
   title: string;
   intro: string;
   lines: string;
@@ -36,7 +36,7 @@ const isoDate = (date: Date): string => date.toISOString().slice(0, 10);
 
 export function defaultForm(today = new Date()): InvoiceForm {
   return {
-    members: DEMO_MEMBERS,
+    recipients: DEMO_MEMBERS,
     title: 'Jäsenmaksulasku 2026',
     intro: 'Hei!\n\nOhessa vuoden 2026 jäsenmaksulasku. Maksa lasku eräpäivään mennessä käyttäen laskun viitenumeroa.\n\nKiitos kun olet jäsenenä mukana!',
     lines: 'Jäsenmaksu 2026;40,00',
@@ -56,6 +56,13 @@ export function defaultForm(today = new Date()): InvoiceForm {
     logoW: '45',
     barcode: true
   };
+}
+
+export function migrateForm(stored: Record<string, unknown>): Partial<InvoiceForm> {
+  const { members, ...rest } = stored as { members?: unknown };
+  return typeof members === 'string'
+    ? { ...rest, recipients: members } as Partial<InvoiceForm>
+    : stored as Partial<InvoiceForm>;
 }
 
 export const configOf = (form: InvoiceForm): InvoiceConfig => ({
@@ -79,18 +86,18 @@ export const referenceOptionsOf = (form: InvoiceForm): ReferenceOptions => ({
   shared: form.sharedRef
 });
 
-export function invoicesFor(members: Member[], form: InvoiceForm): Invoice[] {
+export function invoicesFor(recipients: Recipient[], form: InvoiceForm): Invoice[] {
   const defaults = parseLineItems(form.lines);
   const refOptions = referenceOptionsOf(form);
   const firstNumber = Number(form.invoiceNoStart || 1);
 
-  return members.map((member, index) => {
-    const items = itemsFor(member, defaults, form.title);
+  return recipients.map((recipient, index) => {
+    const items = itemsFor(recipient, defaults, form.title);
     const total = items.reduce((sum, item) => sum + item.amount, 0);
     const reference = referenceFor(index, refOptions);
 
     return {
-      member,
+      recipient,
       items,
       total,
       invoiceNo: firstNumber + index,
@@ -110,8 +117,8 @@ export function csvOf(invoices: Invoice[], dueDate: string): string {
 
   const rows = invoices.map((invoice) => {
     const cells = [
-      invoice.member.name,
-      invoice.member.email,
+      invoice.recipient.name,
+      invoice.recipient.email,
       invoice.invoiceNo,
       invoice.reference,
       invoice.total.toFixed(2).replace('.', ','),
