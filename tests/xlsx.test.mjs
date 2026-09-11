@@ -1,6 +1,3 @@
-/* Excel-luvun ja -pohjan testit. Kiintotiedosto jasenrekisteri.xlsx on luotu
-   openpyxl:llä eli täysin eri toteutuksella kuin oma kirjoittajamme – se varmistaa,
-   että luemme muidenkin ohjelmien tuottamia tiedostoja. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -39,7 +36,7 @@ test('muun ohjelman tuottama .xlsx luetaan oikein', async () => {
   assert.deepEqual(members.map((m) => [m.name, m.email, m.amount]), [
     ['Matti Meikäläinen', 'matti.meikalainen@example.com', 40],
     ['Ömer Äkkinen', 'omer.akkinen@example.com', 20.5],
-    ['Liisa & Co <Lahtinen>', 'liisa@example.com', null],   // XML-erikoismerkit ja tyhjä solu
+    ['Liisa & Co <Lahtinen>', 'liisa@example.com', null],
     ['Maija Virtanen', 'maija.virtanen@example.com', null]
   ]);
   assert.match(columnInfo, /nimi: Nimi/);

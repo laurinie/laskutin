@@ -1,5 +1,3 @@
-/* PDF-piirron testit. drawInvoice ei koske DOM:iin, joten sama koodi ajetaan tässä
-   Nodessa samalla jsPDF-versiolla, joka on vendoroitu selainta varten. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -62,7 +60,7 @@ test('pitkä sisältö jatkuu seuraavalle sivulle', () => {
 });
 
 test('maksutiedot ja skandit päätyvät sivulle', () => {
-  const doc = newDoc(false);                    // pakkaamaton, jotta tekstin voi etsiä
+  const doc = newDoc(false);
   drawInvoice(doc, invoice(), cfg, null);
   const pdf = Buffer.from(doc.output('arraybuffer')).toString('latin1');
   assert.match(pdf, /MAKSUTIEDOT/);

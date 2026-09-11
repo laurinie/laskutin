@@ -1,164 +1,179 @@
 import { money } from './format.js';
 import { refPretty } from './reference.js';
 export const A4 = { w: 210, h: 297 };
-/** Marginaali millimetreinä. */
 export const M = 18;
 export const CONTENT_W = A4.w - 2 * M;
-/** Piirtää yhden laskun asiakirjan nykyiselle sivulle, lisäten sivuja tarvittaessa. */
-export function drawInvoice(doc, d, cfg, logo) {
-    const gray = () => { doc.setTextColor(110, 118, 130); };
-    const ink = () => { doc.setTextColor(25, 28, 34); };
-    const BOTTOM = A4.h - M - 8; // alin sallittu sisällön reuna
-    const firstPage = doc.getCurrentPageInfo().pageNumber;
-    let y = M;
-    /* Vaihtaa sivua, jos seuraava elementti ei mahdu. */
-    const ensure = (need) => {
-        if (y + need > BOTTOM) {
-            doc.addPage();
-            y = M;
-        }
-    };
-    /* kuva */
-    let logoBottom = null;
-    if (logo) {
-        const w = cfg.logoPos === 'banner' ? CONTENT_W : Math.min(cfg.logoW, CONTENT_W);
-        const h = w / logo.ratio;
-        const x = cfg.logoPos === 'right' ? A4.w - M - w : M;
-        doc.addImage(logo.dataUrl, logo.format, x, y, w, h);
-        if (cfg.logoPos === 'right')
-            logoBottom = M + h; // otsikko tulee samalle riville
-        else
-            y += h + 6;
-    }
-    /* otsikko + metatiedot */
+const CONTENT_BOTTOM = A4.h - M - 8;
+const FOOTER_Y = A4.h - 12;
+const LINE_H = 5.2;
+const GRAY = [110, 118, 130];
+const INK = [25, 28, 34];
+const BOX_FILL = [246, 248, 251];
+const RULE = [215, 220, 228];
+const pageNumber = (doc) => doc.getCurrentPageInfo().pageNumber;
+function fitOnPage(doc, y, needed) {
+    if (y + needed <= CONTENT_BOTTOM)
+        return y;
+    doc.addPage();
+    return M;
+}
+export function drawInvoice(doc, invoice, cfg, logo) {
+    const firstPage = pageNumber(doc);
+    const afterLogo = drawLogo(doc, cfg, logo);
+    const afterTitle = drawTitle(doc, cfg, logo, afterLogo);
+    const metaBottom = drawMeta(doc, cfg, invoice, afterTitle);
+    const recipientBottom = drawRecipient(doc, invoice, afterTitle);
+    let y = Math.max(metaBottom, recipientBottom) + 8;
+    y = drawIntro(doc, cfg.intro, y);
+    y = drawItems(doc, invoice, y);
+    drawPaymentBox(doc, cfg, invoice, y);
+    drawPageFooters(doc, cfg, firstPage);
+}
+function drawLogo(doc, cfg, logo) {
+    if (!logo)
+        return { y: M, bottom: null };
+    const width = cfg.logoPos === 'banner' ? CONTENT_W : Math.min(cfg.logoW, CONTENT_W);
+    const height = width / logo.ratio;
+    const x = cfg.logoPos === 'right' ? A4.w - M - width : M;
+    doc.addImage(logo.dataUrl, logo.format, x, M, width, height);
+    return cfg.logoPos === 'right'
+        ? { y: M, bottom: M + height }
+        : { y: M + height + 6, bottom: null };
+}
+function drawTitle(doc, cfg, logo, logoArea) {
     doc.setFont('helvetica', 'bold').setFontSize(19);
-    ink();
-    const titleW = cfg.logoPos === 'right' && logo ? CONTENT_W - cfg.logoW - 6 : CONTENT_W;
-    const titleLines = doc.splitTextToSize(cfg.title || 'Lasku', titleW);
-    doc.text(titleLines, M, y + 6);
-    y += 6 + titleLines.length * 8;
-    if (logoBottom !== null)
-        y = Math.max(y, logoBottom + 8);
-    doc.setFont('helvetica', 'normal').setFontSize(9.5);
-    const meta = [
-        ['Laskunumero', String(d.invoiceNo)],
+    doc.setTextColor(...INK);
+    const width = logo && cfg.logoPos === 'right' ? CONTENT_W - cfg.logoW - 6 : CONTENT_W;
+    const lines = doc.splitTextToSize(cfg.title || 'Lasku', width);
+    doc.text(lines, M, logoArea.y + 6);
+    const bottom = logoArea.y + 6 + lines.length * 8;
+    return logoArea.bottom === null ? bottom : Math.max(bottom, logoArea.bottom + 8);
+}
+function drawMeta(doc, cfg, invoice, top) {
+    const rows = [
+        ['Laskunumero', String(invoice.invoiceNo)],
         ['Laskun päivä', cfg.invoiceDate],
         ['Eräpäivä', cfg.dueDate],
-        ['Viite', refPretty(d.reference)]
+        ['Viite', refPretty(invoice.reference)]
     ];
-    let my = y;
-    meta.filter(([, v]) => v).forEach(([k, v]) => {
-        gray();
-        doc.text(k, A4.w - M - 52, my);
-        ink();
+    doc.setFont('helvetica', 'normal').setFontSize(9.5);
+    let y = top;
+    rows.filter(([, value]) => value).forEach(([label, value]) => {
+        doc.setTextColor(...GRAY);
+        doc.text(label, A4.w - M - 52, y);
+        doc.setTextColor(...INK);
         doc.setFont('helvetica', 'bold');
-        doc.text(v, A4.w - M, my, { align: 'right' });
+        doc.text(value, A4.w - M, y, { align: 'right' });
         doc.setFont('helvetica', 'normal');
-        my += 5.2;
+        y += LINE_H;
     });
-    /* vastaanottaja */
-    gray();
+    return y;
+}
+function drawRecipient(doc, invoice, top) {
+    doc.setTextColor(...GRAY);
     doc.setFontSize(9);
-    doc.text('VASTAANOTTAJA', M, y);
-    ink();
+    doc.text('VASTAANOTTAJA', M, top);
+    doc.setTextColor(...INK);
     doc.setFontSize(11.5).setFont('helvetica', 'bold');
-    doc.text(d.member.name || '', M, y + 6);
+    doc.text(invoice.member.name, M, top + 6);
     doc.setFont('helvetica', 'normal').setFontSize(10);
-    gray();
-    doc.text(d.member.email || '', M, y + 11.5);
-    y = Math.max(my, y + 16) + 8;
-    /* saatesanat */
-    if (cfg.intro.trim()) {
-        ink();
-        doc.setFontSize(10.5);
-        cfg.intro.replace(/\r/g, '').split('\n').forEach((p) => {
-            if (!p.trim()) {
-                y += 4;
-                return;
-            }
-            const lines = doc.splitTextToSize(p, CONTENT_W);
-            ensure(lines.length * 5.2);
-            doc.text(lines, M, y);
-            y += lines.length * 5.2;
-        });
-        y += 8;
+    doc.setTextColor(...GRAY);
+    doc.text(invoice.member.email, M, top + 11.5);
+    return top + 16;
+}
+function drawIntro(doc, intro, top) {
+    if (!intro.trim())
+        return top;
+    doc.setTextColor(...INK);
+    doc.setFontSize(10.5);
+    let y = top;
+    for (const paragraph of intro.replace(/\r/g, '').split('\n')) {
+        if (!paragraph.trim()) {
+            y += 4;
+            continue;
+        }
+        const lines = doc.splitTextToSize(paragraph, CONTENT_W);
+        y = fitOnPage(doc, y, lines.length * LINE_H);
+        doc.text(lines, M, y);
+        y += lines.length * LINE_H;
     }
-    /* laskurivit */
-    doc.setDrawColor(215, 220, 228);
-    gray();
+    return y + 8;
+}
+function drawItems(doc, invoice, top) {
+    doc.setDrawColor(...RULE);
+    doc.setTextColor(...GRAY);
     doc.setFontSize(9);
-    doc.text('KUVAUS', M, y);
-    doc.text('SUMMA', A4.w - M, y, { align: 'right' });
-    y += 2.5;
+    doc.text('KUVAUS', M, top);
+    doc.text('SUMMA', A4.w - M, top, { align: 'right' });
+    let y = top + 2.5;
     doc.line(M, y, A4.w - M, y);
     y += 6;
-    ink();
+    doc.setTextColor(...INK);
     doc.setFontSize(10.5);
-    d.items.forEach((it) => {
-        const lines = doc.splitTextToSize(it.desc, CONTENT_W - 38);
-        ensure(lines.length * 5.2 + 2.5);
+    for (const item of invoice.items) {
+        const lines = doc.splitTextToSize(item.desc, CONTENT_W - 38);
+        y = fitOnPage(doc, y, lines.length * LINE_H + 2.5);
         doc.text(lines, M, y);
-        doc.text(money(it.amount), A4.w - M, y, { align: 'right' });
-        y += Math.max(lines.length * 5.2, 5.2) + 2.5;
-    });
-    ensure(14);
+        doc.text(money(item.amount), A4.w - M, y, { align: 'right' });
+        y += Math.max(lines.length * LINE_H, LINE_H) + 2.5;
+    }
+    y = fitOnPage(doc, y, 14);
     doc.line(M, y, A4.w - M, y);
     y += 7;
     doc.setFont('helvetica', 'bold').setFontSize(12);
     doc.text('Yhteensä', M, y);
-    doc.text(money(d.total), A4.w - M, y, { align: 'right' });
+    doc.text(money(invoice.total), A4.w - M, y, { align: 'right' });
     doc.setFont('helvetica', 'normal');
-    y += 12;
-    /* maksutiedot-laatikko, ankkuroituna sivun alareunaan */
+    return y + 12;
+}
+function drawPaymentBox(doc, cfg, invoice, top) {
     const rows = [
         ['Saaja', cfg.payee],
         ['IBAN', cfg.iban],
         ...(cfg.bic ? [['BIC', cfg.bic]] : []),
-        ['Viitenumero', refPretty(d.reference)],
+        ['Viitenumero', refPretty(invoice.reference)],
         ['Eräpäivä', cfg.dueDate],
-        ['Maksettava', money(d.total)]
+        ['Maksettava', money(invoice.total)]
     ];
-    const boxH = 14 + Math.ceil(rows.length / 2) * 11 + (cfg.payNote.trim() ? 7 : 0);
-    if (y + boxH > BOTTOM) {
-        doc.addPage();
-        y = M;
-    }
-    const boxY = Math.max(y, BOTTOM - boxH);
-    doc.setFillColor(246, 248, 251);
-    doc.roundedRect(M, boxY, CONTENT_W, boxH, 3, 3, 'F');
-    ink();
+    const height = 14 + Math.ceil(rows.length / 2) * 11 + (cfg.payNote.trim() ? 7 : 0);
+    const boxY = Math.max(fitOnPage(doc, top, height), CONTENT_BOTTOM - height);
+    doc.setFillColor(...BOX_FILL);
+    doc.roundedRect(M, boxY, CONTENT_W, height, 3, 3, 'F');
+    doc.setTextColor(...INK);
     doc.setFont('helvetica', 'bold').setFontSize(10);
     doc.text('MAKSUTIEDOT', M + 6, boxY + 8);
     doc.setFont('helvetica', 'normal');
+    const emphasized = ['Viitenumero', 'Maksettava'];
     rows.forEach(([label, value], i) => {
         const x = M + 6 + (i % 2) * (CONTENT_W / 2 - 3);
-        const ry = boxY + 18 + Math.floor(i / 2) * 11;
-        gray();
+        const y = boxY + 18 + Math.floor(i / 2) * 11;
+        doc.setTextColor(...GRAY);
         doc.setFontSize(8.5);
-        doc.text(label.toUpperCase(), x, ry);
-        ink();
+        doc.text(label.toUpperCase(), x, y);
+        doc.setTextColor(...INK);
         doc.setFontSize(11);
-        const highlight = label === 'Viitenumero' || label === 'Maksettava';
-        doc.setFont('helvetica', highlight ? 'bold' : 'normal');
-        doc.text(value, x, ry + 5.5);
+        doc.setFont('helvetica', emphasized.includes(label) ? 'bold' : 'normal');
+        doc.text(value, x, y + 5.5);
         doc.setFont('helvetica', 'normal');
     });
     if (cfg.payNote.trim()) {
-        gray();
+        doc.setTextColor(...GRAY);
         doc.setFontSize(8.5);
-        doc.text(cfg.payNote, M + 6, boxY + boxH - 3.5);
+        doc.text(cfg.payNote, M + 6, boxY + height - 3.5);
     }
-    /* alatunniste ja sivunumerot tämän laskun jokaiselle sivulle */
-    const lastPage = doc.getCurrentPageInfo().pageNumber;
-    for (let p = firstPage; p <= lastPage; p++) {
-        doc.setPage(p);
-        gray();
+}
+function drawPageFooters(doc, cfg, firstPage) {
+    const lastPage = pageNumber(doc);
+    const pageCount = lastPage - firstPage + 1;
+    for (let page = firstPage; page <= lastPage; page++) {
+        doc.setPage(page);
+        doc.setTextColor(...GRAY);
         doc.setFontSize(8.5);
         if (cfg.footer.trim()) {
-            doc.text(doc.splitTextToSize(cfg.footer, CONTENT_W), A4.w / 2, A4.h - 12, { align: 'center' });
+            doc.text(doc.splitTextToSize(cfg.footer, CONTENT_W), A4.w / 2, FOOTER_Y, { align: 'center' });
         }
-        if (lastPage > firstPage) {
-            doc.text(`${p - firstPage + 1} / ${lastPage - firstPage + 1}`, A4.w - M, A4.h - 12, { align: 'right' });
+        if (pageCount > 1) {
+            doc.text(`${page - firstPage + 1} / ${pageCount}`, A4.w - M, FOOTER_Y, { align: 'right' });
         }
     }
     doc.setPage(lastPage);

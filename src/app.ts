@@ -1,5 +1,3 @@
-/* Laskutin – käyttöliittymäkerros: lomakkeen luku, tilan tallennus ja lataukset.
-   Varsinainen logiikka on moduuleissa members/xlsx/pdf/reference/format. */
 import type { Invoice, InvoiceConfig, LogoPosition, Logo, Member, RefMode, ReferenceOptions } from './types.js';
 import { csvField, errorMessage, escHtml, fmtDate, money, slug } from './format.js';
 import { ibanPretty, ibanValid, refIsValid, refPretty, referenceFor } from './reference.js';
@@ -8,9 +6,8 @@ import { readXlsx, rowsToText, templateXlsxZip, TEMPLATE_CSV, XLSX_MIME } from '
 import { drawInvoice } from './pdf.js';
 
 const STORE_KEY = 'laskutin.v1';
-const STORE_KEY_OLD = 'laskuttaja.v1';        // sovelluksen aiempi nimi
-
-/* ---------- DOM-apurit ---------- */
+const STORE_KEY_OLD = 'laskuttaja.v1';
+const BOM = '\uFEFF';
 
 function el<T extends HTMLElement>(id: string): T {
   const node = document.getElementById(id);
@@ -25,13 +22,9 @@ const setVal = (id: string, v: string): void => { field(id).value = v; };
 const refMode = (): RefMode =>
   (document.querySelector<HTMLInputElement>('input[name=refMode]:checked')?.value as RefMode) ?? 'per';
 
-/* ---------- tila ---------- */
-
 let members: Member[] = [];
 let columnInfo = '';
 let logo: Logo | null = null;
-
-/* ---------- lomakkeen luku ---------- */
 
 const refOptions = (): ReferenceOptions => ({
   mode: refMode(),
@@ -64,8 +57,6 @@ function invoiceFor(member: Member, index: number): Invoice {
     reference: referenceFor(index, refOptions())
   };
 }
-
-/* ---------- näkymän päivitys ---------- */
 
 function refresh(): void {
   const parsed = parseMembers(val('members'));
@@ -131,8 +122,6 @@ function setStatus(msg: string, isErr = false): void {
   node.textContent = msg;
   node.style.color = isErr ? 'var(--err)' : '';
 }
-
-/* ---------- PDF-tuotanto ---------- */
 
 function newDoc() {
   const lib = window.jspdf;
@@ -216,7 +205,7 @@ function csvText(): string {
     return [m.name, m.email, d.invoiceNo, d.reference, d.total.toFixed(2).replace('.', ','), fmtDate(val('dueDate'))]
       .map(csvField).join(';');
   });
-  return '\uFEFF' + [head, ...rows].join('\r\n');
+  return BOM + [head, ...rows].join('\r\n');
 }
 
 function exportCsv(): void {
@@ -224,8 +213,6 @@ function exportCsv(): void {
   download(new Blob([csvText()], { type: 'text/csv;charset=utf-8' }), 'laskut.csv');
   setStatus('CSV viety – kätevä esim. sähköpostien massalähetykseen.');
 }
-
-/* ---------- tiedostojen tuonti ---------- */
 
 async function importFile(file: File): Promise<void> {
   try {
@@ -268,8 +255,6 @@ function loadLogo(file: File): void {
   reader.readAsDataURL(file);
 }
 
-/* ---------- tilan tallennus ---------- */
-
 const FIELDS = ['members', 'title', 'intro', 'lines', 'footer', 'payee', 'iban', 'bic',
   'invoiceDate', 'dueDate', 'invoiceNoStart', 'payNote', 'refPrefix', 'refStart', 'sharedRef',
   'logoPos', 'logoW'] as const;
@@ -280,12 +265,20 @@ interface StoredState {
   [field: string]: string | RefMode | Logo | undefined;
 }
 
+function quotaExceeded(): void {
+  setStatus('Asetuksia ei voitu tallentaa selaimeen: tila on täynnä.', true);
+}
+
 function save(): void {
   const data: StoredState = {};
   FIELDS.forEach((f) => { data[f] = val(f); });
   data.refMode = refMode();
   if (logo && logo.dataUrl.length < 1_500_000) data.logo = logo;
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch { /* kvootti täynnä */ }
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  } catch {
+    quotaExceeded();
+  }
 }
 
 function restore(): boolean {
@@ -316,8 +309,6 @@ Matti Meikäläinen;matti.meikalainen@example.com;40,00
 Maija Virtanen;maija.virtanen@example.com;40,00
 Ömer Äkkinen;omer.akkinen@example.com;20,00
 Liisa Lahtinen;liisa@example.com;`;
-
-/* ---------- alustus ---------- */
 
 function toggleRefMode(): void {
   const shared = refMode() === 'shared';
@@ -352,7 +343,7 @@ function init(): void {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0];
     if (file) void importFile(file);
-    input.value = '';                       // sama tiedosto voidaan tuoda uudelleen
+    input.value = '';
   };
   el('tplCsvBtn').onclick = () => {
     download(new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' }), 'jasenlista-pohja.csv');
@@ -371,7 +362,6 @@ function init(): void {
     })();
   };
 
-  // raahaa ja pudota tiedosto jäsenlistakenttään
   const drop = el<HTMLTextAreaElement>('members');
   (['dragover', 'dragenter'] as const).forEach((ev) => drop.addEventListener(ev, (e) => {
     e.preventDefault();

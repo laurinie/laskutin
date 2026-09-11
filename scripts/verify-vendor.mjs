@@ -1,5 +1,3 @@
-/* Tarkistaa, että vendor-hakemiston tiedostot vastaavat sekä versions.json-tiedoston
-   että index.html:n SRI-tarkisteita. Aja: npm run verify */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
@@ -10,7 +8,7 @@ const html = readFileSync('index.html', 'utf8');
 let failures = 0;
 
 for (const [file, meta] of Object.entries(manifest)) {
-  if (typeof meta !== 'object') continue;          // "huom"-kenttä
+  if (typeof meta !== 'object') continue;
   const actual = sri(`vendor/${file}`);
   const inHtml = html.match(
     new RegExp(`<script src="vendor/${file.replace('.', '\\.')}" integrity="([^"]+)"`)

@@ -1,6 +1,3 @@
-/* Kopioi riippuvuudet node_modulesista vendor-hakemistoon, laskee SRI-tarkisteet
-   ja kirjoittaa ne sekä vendor/versions.json-tiedostoon että index.html:ään.
-   Aja: npm run vendor  (esim. kirjaston päivityksen jälkeen) */
 import { createHash } from 'node:crypto';
 import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 

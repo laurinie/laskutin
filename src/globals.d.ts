@@ -1,6 +1,3 @@
-/* Vendoroidut kirjastot ladataan index.html:ssä <script>-tageina, joten ne näkyvät
-   globaaleina. Tyypit tulevat npm-paketeista (devDependency), itse ajonaikainen
-   koodi tulee vendor/-hakemistosta. */
 import type JSZipType from 'jszip';
 import type { jsPDF } from 'jspdf';
 

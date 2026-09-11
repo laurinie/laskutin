@@ -4,8 +4,8 @@ import { itemsFor, parseLineItems, parseMembers } from './members.js';
 import { readXlsx, rowsToText, templateXlsxZip, TEMPLATE_CSV, XLSX_MIME } from './xlsx.js';
 import { drawInvoice } from './pdf.js';
 const STORE_KEY = 'laskutin.v1';
-const STORE_KEY_OLD = 'laskuttaja.v1'; // sovelluksen aiempi nimi
-/* ---------- DOM-apurit ---------- */
+const STORE_KEY_OLD = 'laskuttaja.v1';
+const BOM = '\uFEFF';
 function el(id) {
     const node = document.getElementById(id);
     if (!node)
@@ -16,11 +16,9 @@ const field = (id) => el(id);
 const val = (id) => field(id).value;
 const setVal = (id, v) => { field(id).value = v; };
 const refMode = () => document.querySelector('input[name=refMode]:checked')?.value ?? 'per';
-/* ---------- tila ---------- */
 let members = [];
 let columnInfo = '';
 let logo = null;
-/* ---------- lomakkeen luku ---------- */
 const refOptions = () => ({
     mode: refMode(),
     prefix: val('refPrefix'),
@@ -50,7 +48,6 @@ function invoiceFor(member, index) {
         reference: referenceFor(index, refOptions())
     };
 }
-/* ---------- näkymän päivitys ---------- */
 function refresh() {
     const parsed = parseMembers(val('members'));
     members = parsed.members;
@@ -132,7 +129,6 @@ function setStatus(msg, isErr = false) {
     node.textContent = msg;
     node.style.color = isErr ? 'var(--err)' : '';
 }
-/* ---------- PDF-tuotanto ---------- */
 function newDoc() {
     const lib = window.jspdf;
     if (!lib)
@@ -225,7 +221,7 @@ function csvText() {
         return [m.name, m.email, d.invoiceNo, d.reference, d.total.toFixed(2).replace('.', ','), fmtDate(val('dueDate'))]
             .map(csvField).join(';');
     });
-    return '\uFEFF' + [head, ...rows].join('\r\n');
+    return BOM + [head, ...rows].join('\r\n');
 }
 function exportCsv() {
     if (!members.length) {
@@ -235,7 +231,6 @@ function exportCsv() {
     download(new Blob([csvText()], { type: 'text/csv;charset=utf-8' }), 'laskut.csv');
     setStatus('CSV viety – kätevä esim. sähköpostien massalähetykseen.');
 }
-/* ---------- tiedostojen tuonti ---------- */
 async function importFile(file) {
     try {
         if (/\.xlsx$/i.test(file.name) || /spreadsheetml/.test(file.type)) {
@@ -282,10 +277,12 @@ function loadLogo(file) {
     };
     reader.readAsDataURL(file);
 }
-/* ---------- tilan tallennus ---------- */
 const FIELDS = ['members', 'title', 'intro', 'lines', 'footer', 'payee', 'iban', 'bic',
     'invoiceDate', 'dueDate', 'invoiceNoStart', 'payNote', 'refPrefix', 'refStart', 'sharedRef',
     'logoPos', 'logoW'];
+function quotaExceeded() {
+    setStatus('Asetuksia ei voitu tallentaa selaimeen: tila on täynnä.', true);
+}
 function save() {
     const data = {};
     FIELDS.forEach((f) => { data[f] = val(f); });
@@ -295,7 +292,9 @@ function save() {
     try {
         localStorage.setItem(STORE_KEY, JSON.stringify(data));
     }
-    catch { /* kvootti täynnä */ }
+    catch {
+        quotaExceeded();
+    }
 }
 function restore() {
     let data = null;
@@ -329,7 +328,6 @@ Matti Meikäläinen;matti.meikalainen@example.com;40,00
 Maija Virtanen;maija.virtanen@example.com;40,00
 Ömer Äkkinen;omer.akkinen@example.com;20,00
 Liisa Lahtinen;liisa@example.com;`;
-/* ---------- alustus ---------- */
 function toggleRefMode() {
     const shared = refMode() === 'shared';
     el('sharedWrap').classList.toggle('hidden', !shared);
@@ -360,7 +358,7 @@ function init() {
         const file = input.files?.[0];
         if (file)
             void importFile(file);
-        input.value = ''; // sama tiedosto voidaan tuoda uudelleen
+        input.value = '';
     };
     el('tplCsvBtn').onclick = () => {
         download(new Blob([TEMPLATE_CSV], { type: 'text/csv;charset=utf-8' }), 'jasenlista-pohja.csv');
@@ -380,7 +378,6 @@ function init() {
             }
         })();
     };
-    // raahaa ja pudota tiedosto jäsenlistakenttään
     const drop = el('members');
     ['dragover', 'dragenter'].forEach((ev) => drop.addEventListener(ev, (e) => {
         e.preventDefault();
