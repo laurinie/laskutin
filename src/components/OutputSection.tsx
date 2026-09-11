@@ -3,6 +3,7 @@ import type { Invoice, InvoiceConfig, Logo } from '../lib/types.js';
 import { combinedPdfBlob, singleInvoiceBlob, zipOfInvoices } from '../lib/generate.js';
 import { download, dateStamp } from '../lib/download.js';
 import { errorMessage } from '../lib/format.js';
+import { countBatch } from '../lib/analytics.js';
 import { Card } from './Card.js';
 
 interface OutputSectionProps {
@@ -40,6 +41,7 @@ export function OutputSection({ invoices, config, logo, csv, status, onStatus }:
 
   const onePdf = () => run(async (all) => {
     download(await combinedPdfBlob(all, config, logo), `laskut_${dateStamp()}.pdf`);
+    countBatch('pdf', all.length);
     onStatus(`Valmis: ${all.length} laskua yhdessä PDF-tiedostossa.`);
   });
 
@@ -48,6 +50,7 @@ export function OutputSection({ invoices, config, logo, csv, status, onStatus }:
     const blob = await zipOfInvoices(all, config, logo, csv, (done, total) =>
       onStatus(`Luodaan laskuja… ${done}/${total}`));
     download(blob, `laskut_${dateStamp()}.zip`);
+    countBatch('zip', all.length);
     onStatus(`Valmis: ${all.length} erillistä PDF:ää + laskut.csv ZIP-paketissa.`);
   });
 
@@ -57,6 +60,7 @@ export function OutputSection({ invoices, config, logo, csv, status, onStatus }:
       return;
     }
     download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), 'laskut.csv');
+    countBatch('csv', invoices.length);
     onStatus('CSV viety – kätevä esim. sähköpostien massalähetykseen.');
   };
 

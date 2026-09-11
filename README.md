@@ -77,11 +77,41 @@ npm test          # Vitest
 npm run check     # build + testit
 ```
 
+## Käyttötilastot
+
+Sivu laskee kävijät ja luotujen laskuerien määrän [GoatCounterilla](https://www.goatcounter.com):
+ilmainen, avoimeen lähdekoodiin perustuva, EU-isännöity ja evästeetön, joten suostumusbanneria
+ei tarvita. Mittaus tehdään yhdellä 1×1-kuvapyynnöllä, eikä sivulle ladata kolmannen osapuolen
+JavaScriptiä.
+
+Mitä lähetetään:
+
+| Tapahtuma | Milloin |
+|---|---|
+| sivun polku | sivu avataan |
+| `pdf-<väli>` | yhdistetty PDF ladataan |
+| `zip-<väli>` | ZIP ladataan |
+| `csv-<väli>` | CSV viedään |
+
+`<väli>` on laskujen lukumäärän luokka (`1`, `2-10`, `11-50`, `51-200`, `200+`). **Vastaanottajien
+nimiä, sähköposteja, IBANeja, viitteitä tai summia ei lähetetä koskaan** – vain edellä olevat
+tapahtumanimet. Mittaus ohitetaan, jos selain lähettää Do-Not-Track-pyynnön tai sivua ajetaan
+localhostissa.
+
+Käyttöönotto:
+
+1. Luo ilmainen tili osoitteessa goatcounter.com ja valitse koodi (esim. `laskutin`).
+2. Lisää GitHubissa **Settings → Secrets and variables → Actions → Variables** muuttuja
+   `GOATCOUNTER_URL` arvolla `https://laskutin.goatcounter.com/count`.
+3. Seuraava julkaisu ottaa mittauksen käyttöön. Ilman muuttujaa sovellus ei lähetä mitään.
+
+Paikallisesti mittauksen voi testata kopioimalla `.env.example` tiedostoksi `.env`.
+
 ## Rakenne
 
 | Hakemisto | Sisältö |
 |---|---|
-| `src/lib/` | kehysriippumaton logiikka: viitenumerot, IBAN, vastaanottajalistan jäsennys, Excel, PDF-piirto |
+| `src/lib/` | kehysriippumaton logiikka: viitenumerot, IBAN, vastaanottajalistan jäsennys, Excel, PDF-piirto, tilastot |
 | `src/components/` | React-komponentit, yksi per lomakeosio |
 | `src/hooks/` | `usePersistentState` – lomakkeen tila localStoragessa |
 | `tests/` | Vitest-testit ja testiaineistot |
