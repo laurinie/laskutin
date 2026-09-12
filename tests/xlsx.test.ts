@@ -11,20 +11,16 @@ const fixture = (name: string): Buffer => readFileSync(fileURLToPath(new URL(`fi
 test('luotu pohja on luettavissa takaisin', async () => {
   const template = await templateXlsx();
   const rows = await readXlsx(await template.arrayBuffer());
-  assert.deepEqual(rows[0], ['Nimi', 'Sähköposti', 'Summa']);
+  assert.deepEqual(rows[0], ['Nimi', 'Sähköposti']);
   assert.equal(rows.length, 4);
 
   const { recipients } = parseRecipients(rowsToText(rows));
-  assert.deepEqual(recipients.map((m) => [m.name, m.amount]), [
-    ['Matti Meikäläinen', 40],
-    ['Maija Virtanen', 40],
-    ['Ömer Äkkinen', 20]
-  ]);
+  assert.deepEqual(recipients.map((m) => m.name), ['Matti Meikäläinen', 'Maija Virtanen', 'Ömer Äkkinen']);
 });
 
 test('CSV-pohjassa on BOM ja puolipiste-erotin', () => {
   assert.ok(TEMPLATE_CSV.startsWith('\uFEFF'), 'BOM auttaa Exceliä tunnistamaan UTF-8:n');
-  assert.match(TEMPLATE_CSV.split('\r\n')[0]!, /^\uFEFFNimi;Sähköposti;Summa$/);
+  assert.match(TEMPLATE_CSV.split('\r\n')[0]!, /^\uFEFFNimi;Sähköposti$/);
 });
 
 test('muun ohjelman tuottama .xlsx luetaan oikein', async () => {
@@ -32,11 +28,11 @@ test('muun ohjelman tuottama .xlsx luetaan oikein', async () => {
   assert.deepEqual(rows[0], ['Jäsennumero', 'Nimi', 'Sähköposti', 'Jäsenmaksu']);
 
   const { recipients, columnInfo } = parseRecipients(rowsToText(rows));
-  assert.deepEqual(recipients.map((m) => [m.name, m.email, m.amount]), [
-    ['Matti Meikäläinen', 'matti.meikalainen@example.com', 40],
-    ['Ömer Äkkinen', 'omer.akkinen@example.com', 20.5],
-    ['Liisa & Co <Lahtinen>', 'liisa@example.com', null],
-    ['Maija Virtanen', 'maija.virtanen@example.com', null]
+  assert.deepEqual(recipients.map((m) => [m.name, m.email]), [
+    ['Matti Meikäläinen', 'matti.meikalainen@example.com'],
+    ['Ömer Äkkinen', 'omer.akkinen@example.com'],
+    ['Liisa & Co <Lahtinen>', 'liisa@example.com'],
+    ['Maija Virtanen', 'maija.virtanen@example.com']
   ]);
   assert.match(columnInfo, /nimi: Nimi/);
 });

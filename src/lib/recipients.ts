@@ -34,7 +34,7 @@ const HEADER_PATTERNS_BY_PRIORITY: ReadonlyArray<[keyof ColumnMap, RegExp]> = [
   ['first', /etunimi|first\s*name|given\s*name/i],
   ['last', /sukunimi|last\s*name|family\s*name/i],
   ['name', /nimi|name/i],
-  ['amount', /summa|maksu|hinta|amount|eur|€/i]
+  ['ignoredAmount', /summa|maksu|hinta|amount|eur|€/i]
 ];
 
 export function headerMap(cols: string[]): ColumnMap | null {
@@ -63,7 +63,7 @@ export function describeMap(map: ColumnMap | null, header: string[]): string {
   if (nameCols.length) parts.push(`nimi: ${nameCols.join(' + ')}`);
   else if (map.name !== undefined) parts.push(`nimi: ${header[map.name]}`);
   if (map.email !== undefined) parts.push(`sähköposti: ${header[map.email]}`);
-  if (map.amount !== undefined) parts.push(`summa: ${header[map.amount]}`);
+  if (map.ignoredAmount !== undefined) parts.push(`sarake "${header[map.ignoredAmount]}" ohitetaan – summat tulevat laskuriveiltä`);
   return parts.join(' · ');
 }
 
@@ -79,26 +79,16 @@ function rowToRecipientByHeader(cols: string[], map: ColumnMap): Recipient | nul
   const name = [cell(map.first), cell(map.last)].filter(Boolean).join(' ') || cell(map.name);
   if (!name && !email) return null;
 
-  return {
-    name: name || email.split('@')[0]!,
-    email,
-    amount: map.amount === undefined ? null : parseAmount(cell(map.amount)),
-    badEmail: !isEmail(email)
-  };
+  return { name: name || email.split('@')[0]!, email, badEmail: !isEmail(email) };
 }
 
 export function rowToRecipientHeuristic(cols: string[]): Recipient {
   const email = cols.find(isEmail) || cols.find((col) => col.includes('@')) || '';
   const rest = cols.filter((col) => col !== email);
+  // numeeriset sarakkeet (jäsennumero, summa) ohitetaan nimeä etsittäessä
   const name = rest.find((col) => col && parseAmount(col) === null) || rest[0] || '';
-  const amountCol = rest.find((col) => col !== name && parseAmount(col) !== null);
 
-  return {
-    name: name || email.split('@')[0]!,
-    email,
-    amount: parseAmount(amountCol),
-    badEmail: !isEmail(email)
-  };
+  return { name: name || email.split('@')[0]!, email, badEmail: !isEmail(email) };
 }
 
 export interface ParsedRecipients {
@@ -129,8 +119,7 @@ export function parseLineItems(text: string): LineItem[] {
   });
 }
 
-export function itemsFor(recipient: Recipient, defaults: LineItem[], fallbackDesc: string): LineItem[] {
-  const desc = fallbackDesc || 'Laskurivi';
-  if (recipient.amount === null) return defaults.length ? defaults : [{ desc, amount: 0 }];
-  return [{ desc: defaults[0]?.desc || desc, amount: recipient.amount }];
+/** Laskurivit ovat samat kaikille; ilman rivejä syntyy yksi nollarivi otsikon nimellä. */
+export function invoiceItems(defaults: LineItem[], fallbackDesc: string): LineItem[] {
+  return defaults.length ? defaults : [{ desc: fallbackDesc || 'Laskurivi', amount: 0 }];
 }

@@ -67,7 +67,8 @@ export function RecipientsSection({ text, onText, invoices, columnInfo, onStatus
     <Card title="1. Vastaanottajat">
       <p className="hint">
         Liitä lista vastaanottajista, tuo <b>CSV- tai Excel-tiedosto</b> (.xlsx) tai raahaa tiedosto kenttään.
-        Sarakkeet: <code>Nimi;sähköposti;summa</code> (summa valinnainen), erottimena <code>;</code>, <code>,</code> tai tab.
+        Sarakkeet: <code>Nimi;sähköposti</code>, erottimena <code>;</code>, <code>,</code> tai tab. Ylimääräiset
+        sarakkeet ohitetaan – laskun summa tulee aina laskuriveiltä.
         Otsikkorivi tunnistetaan automaattisesti.
       </p>
 

@@ -43,7 +43,7 @@ const cfg: InvoiceConfig = {
 };
 
 const invoice = (over: Partial<Invoice> = {}): Invoice => ({
-  recipient: { name: 'Matti Meikäläinen', email: 'matti@example.com', amount: null, badEmail: false },
+  recipient: { name: 'Matti Meikäläinen', email: 'matti@example.com', badEmail: false },
   items: [{ desc: 'Jäsenmaksu 2026', amount: 40 }, { desc: 'Lehtitilaus', amount: 12.5 }],
   total: 52.5,
   invoiceNo: 1001,

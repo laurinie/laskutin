@@ -11,11 +11,10 @@ lähde koneelta mihinkään.
 - **Vastaanottajien tuonti**: liitä leikepöydältä, tuo **CSV- tai Excel-tiedosto (.xlsx)** tai raahaa
   tiedosto kenttään. Erottimena `;`, `,` tai tab. Valmiin pohjan saa napeista *Excel-pohja* ja
   *CSV-pohja* (samat tiedostot ovat myös repossa).
-- **Sarakkeiden tunnistus**: otsikkorivistä tunnistetaan nimi-, sähköposti- ja summasarake, myös
-  erilliset `Etunimi`/`Sukunimi`-sarakkeet ja englanninkieliset otsikot (`Name`, `Email`, `Amount`).
-  Jäsen- tai asiakasnumeron kaltaiset sarakkeet ohitetaan, eikä niitä sekoiteta summaan. Ilman otsikkoriviä
-  sarakkeet päätellään sisällöstä. Sovellus näyttää, mitkä sarakkeet se tunnisti.
-  Rivikohtainen summa korvaa oletussumman kyseisellä vastaanottajalla.
+- **Sarakkeiden tunnistus**: otsikkorivistä tunnistetaan nimi- ja sähköpostisarake, myös
+  erilliset `Etunimi`/`Sukunimi`-sarakkeet ja englanninkieliset otsikot (`Name`, `Email`).
+  Muut sarakkeet – jäsennumerot, summat – ohitetaan, ja sovellus kertoo mitkä se tunnisti.
+  Ilman otsikkoriviä sarakkeet päätellään sisällöstä.
 - **Laskun sisältö**: otsikko, monirivinen saatesanat-teksti, laskurivit (`Kuvaus;summa`),
   kuva/logo (oikea ylänurkka, vasen tai leveä banneri) ja alatunniste.
 - **Maksutiedot**: saaja, IBAN (tarkistetaan mod-97-algoritmilla), BIC, laskun päivä,
@@ -143,7 +142,8 @@ npm run check     # build + testit
 - Excel-tuki kattaa `.xlsx`-muodon (luetaan ja kirjoitetaan suoraan JSZipillä, ilman taulukkokirjastoa).
   Vanhaa binääristä `.xls`-muotoa ei tueta – tallenna se Excelissä muodossa `.xlsx` tai CSV. Laskukaavat
   luetaan niiden tallennetusta arvosta, joten tallenna tiedosto Excelissä ennen tuontia.
-- Rivikohtainen summa CSV:ssä korvaa laskurivit yhdellä rivillä (kuvaus otetaan ensimmäiseltä laskuriviltä).
+- Laskurivit ovat samat kaikille vastaanottajille. Jos summat vaihtelevat (esim. opiskelijajäsenet),
+  aja laskutus useammassa erässä eri laskuriveillä.
 - PDF käyttää Helvetica-fonttia, joka tukee skandeja (ä, ö, å).
 - Mahdollinen jatkokehitys: virtuaaliviivakoodi / QR-koodi maksuosioon, laskujen lähetys
   suoraan sähköpostilla (vaatisi palvelimen tai esim. Mailgun-integraation).

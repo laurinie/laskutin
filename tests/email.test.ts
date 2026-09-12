@@ -5,7 +5,7 @@ import { brevoMessage, defaultEmailSettings, renderTemplate, settingsProblem } f
 import type { Invoice } from '../src/lib/types.js';
 
 const invoice: Invoice = {
-  recipient: { name: 'Matti Meikäläinen', email: 'matti@example.com', amount: null, badEmail: false },
+  recipient: { name: 'Matti Meikäläinen', email: 'matti@example.com', badEmail: false },
   items: [{ desc: 'Jäsenmaksu', amount: 40 }],
   total: 40,
   invoiceNo: 1001,

@@ -1,7 +1,6 @@
 export interface Recipient {
   name: string;
   email: string;
-  amount: number | null;
   badEmail: boolean;
 }
 
@@ -46,7 +45,8 @@ export interface ColumnMap {
   first?: number;
   last?: number;
   name?: number;
-  amount?: number;
+  /** Tunnistetaan vain jotta voidaan kertoa, että sarake ohitetaan. */
+  ignoredAmount?: number;
 }
 
 export type RefMode = 'per' | 'shared';

@@ -1,6 +1,6 @@
 import type { Invoice, InvoiceConfig, LogoPosition, Recipient, RefMode, ReferenceOptions } from './types.js';
 import { BOM, csvField, fmtDate } from './format.js';
-import { itemsFor, parseLineItems } from './recipients.js';
+import { invoiceItems, parseLineItems } from './recipients.js';
 import { ibanPrettyOrEmpty, referenceFor } from './reference.js';
 import { virtualBarcode } from './barcode.js';
 
@@ -27,10 +27,10 @@ export interface InvoiceForm {
 }
 
 export const DEMO_MEMBERS = `Nimi;Sähköposti;Summa
-Matti Meikäläinen;matti.meikalainen@example.com;40,00
-Maija Virtanen;maija.virtanen@example.com;40,00
-Ömer Äkkinen;omer.akkinen@example.com;20,00
-Liisa Lahtinen;liisa@example.com;`;
+Matti Meikäläinen;matti.meikalainen@example.com
+Maija Virtanen;maija.virtanen@example.com
+Ömer Äkkinen;omer.akkinen@example.com
+Liisa Lahtinen;liisa@example.com`;
 
 const isoDate = (date: Date): string => date.toISOString().slice(0, 10);
 
@@ -91,9 +91,10 @@ export function invoicesFor(recipients: Recipient[], form: InvoiceForm): Invoice
   const refOptions = referenceOptionsOf(form);
   const firstNumber = Number(form.invoiceNoStart || 1);
 
+  const items = invoiceItems(defaults, form.title);
+  const total = items.reduce((sum, item) => sum + item.amount, 0);
+
   return recipients.map((recipient, index) => {
-    const items = itemsFor(recipient, defaults, form.title);
-    const total = items.reduce((sum, item) => sum + item.amount, 0);
     const reference = referenceFor(index, refOptions);
 
     return {

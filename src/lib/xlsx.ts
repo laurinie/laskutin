@@ -104,10 +104,10 @@ export const rowsToText = (rows: string[][]): string =>
   rows.map((cols) => cols.map((cell) => (/[;"\n]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell)).join(';')).join('\n');
 
 export const TEMPLATE_ROWS: ReadonlyArray<ReadonlyArray<string | number>> = [
-  ['Nimi', 'Sähköposti', 'Summa'],
-  ['Matti Meikäläinen', 'matti.meikalainen@example.com', 40],
-  ['Maija Virtanen', 'maija.virtanen@example.com', 40],
-  ['Ömer Äkkinen', 'omer.akkinen@example.com', 20]
+  ['Nimi', 'Sähköposti'],
+  ['Matti Meikäläinen', 'matti.meikalainen@example.com'],
+  ['Maija Virtanen', 'maija.virtanen@example.com'],
+  ['Ömer Äkkinen', 'omer.akkinen@example.com']
 ];
 
 export const TEMPLATE_CSV = BOM + TEMPLATE_ROWS
@@ -173,8 +173,8 @@ export async function templateXlsx(): Promise<Blob> {
 
   zip.file('xl/worksheets/sheet1.xml',
     `${XML_HEADER}<worksheet xmlns="${SHEET_NS}">` +
-    `<cols><col min="1" max="1" width="28" customWidth="1"/><col min="2" max="2" width="36" customWidth="1"/>` +
-    `<col min="3" max="3" width="12" customWidth="1"/></cols><sheetData>${sheetDataXml()}</sheetData></worksheet>`);
+    `<cols><col min="1" max="1" width="28" customWidth="1"/>` +
+    `<col min="2" max="2" width="36" customWidth="1"/></cols><sheetData>${sheetDataXml()}</sheetData></worksheet>`);
 
   return zip.generateAsync({ type: 'blob', mimeType: XLSX_MIME });
 }
