@@ -76,7 +76,7 @@ Julkaisu tapahtuu GitHub Actionsilla: jokainen push `main`-haaraan ajaa testit, 
 sovelluksen ja julkaisee `dist/`-hakemiston Pagesiin (`.github/workflows/deploy.yml`).
 
 Ota käyttöön kerran: **Settings → Pages → Source: GitHub Actions**. Oma verkkotunnus
-(`laskutin.kettuniemi.fi`) tulee `public/CNAME`-tiedostosta, joka kopioituu buildin mukana.
+(`luolaskut.kettuniemi.fi`) tulee `public/CNAME`-tiedostosta, joka kopioituu buildin mukana.
 
 Käännetty tuloste ei ole versionhallinnassa – buildin tekee CI.
 
