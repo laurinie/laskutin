@@ -1,5 +1,5 @@
 {
-  "name": "laskutin",
+  "name": "luolaskut",
   "version": "1.0.0",
   "description": "PDF-laskujen generointi jäsenlistasta – staattinen selainsovellus",
   "scripts": {

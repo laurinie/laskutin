@@ -1,6 +1,8 @@
-# 🧾 Laskutin
+# 🕯️ Luolaskut
 
 Staattinen selainsovellus PDF-laskujen generointiin nimi+sähköposti-listasta.
+Nimi on kaivettu sanoista luola ja laskut – käyttöliittymä on teemoitettu sen mukaisesti,
+mutta itse laskut pysyvät asiallisen näköisinä.
 Ei palvelinta, ei asennusta, ei tilien luontia – kaikki tapahtuu selaimessa, eikä vastaanottajalista
 lähde koneelta mihinkään.
 

@@ -10,9 +10,10 @@ import { ReferenceSection } from './components/ReferenceSection.js';
 import { OutputSection } from './components/OutputSection.js';
 import { EmailSection } from './components/EmailSection.js';
 
-const STORE_KEY = 'laskutin.v1';
-const LEGACY_STORE_KEY = 'laskuttaja.v1';
-const LOGO_KEY = 'laskutin.logo';
+const STORE_KEY = 'luolaskut.v1';
+const LEGACY_STORE_KEY = 'laskutin.v1';
+const LOGO_KEY = 'luolaskut.logo';
+const LEGACY_LOGO_KEY = 'laskutin.logo';
 const MAX_STORED_LOGO = 1_500_000;
 
 interface Status {
@@ -26,7 +27,7 @@ export function App() {
     defaultForm,
     { legacyKey: LEGACY_STORE_KEY, migrate: migrateForm }
   );
-  const { value: logo, setValue: setLogo } = usePersistentState<Logo | null>(LOGO_KEY, () => null);
+  const { value: logo, setValue: setLogo } = usePersistentState<Logo | null>(LOGO_KEY, () => null, { legacyKey: LEGACY_LOGO_KEY });
   const [status, setStatus] = useState<Status>({ message: '', isError: false });
 
   const setField = <K extends keyof InvoiceForm>(key: K, value: InvoiceForm[K]) =>
@@ -57,8 +58,8 @@ export function App() {
   return (
     <>
       <header className="topbar">
-        <h1>🧾 Laskutin</h1>
-        <p className="sub">Generoi PDF-laskut vastaanottajalistasta. Kaikki tapahtuu selaimessa – tietoja ei lähetetä mihinkään.</p>
+        <h1>🕯️ Luolaskut</h1>
+        <p className="sub">Kaiva laskut esiin vastaanottajalistasta. Kaikki tapahtuu selaimessa, syvällä oman koneesi uumenissa.</p>
       </header>
 
       <main>

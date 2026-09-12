@@ -1,22 +1,39 @@
 :root{
-  --bg:#f5f6f8; --panel:#fff; --ink:#15181d; --muted:#5c6573; --line:#dfe3e9;
-  --accent:#1f5fd0; --accent-ink:#fff; --ok:#17794a; --warn:#a4410a; --err:#b3261e;
-  --radius:12px;
+  --bg:#e8e0d2; --bg-deep:#d6cab6; --panel:#f4efe5; --ink:#2b2118; --muted:#6b5c4a;
+  --line:#c9bba4; --accent:#a9541a; --accent-ink:#fff8ee; --ok:#4a6b23; --warn:#9a5b10; --err:#9c2f20;
+  --glow:rgba(214,150,60,.20); --radius:12px;
 }
 @media (prefers-color-scheme: dark){
-  :root{ --bg:#11141a; --panel:#181c23; --ink:#e9edf3; --muted:#9aa4b2; --line:#2a313b;
-         --accent:#5b94f0; --accent-ink:#0d1117; --ok:#5bd39a; --warn:#f0a861; --err:#ff8a80; }
+  :root{
+    --bg:#15100d; --bg-deep:#0b0806; --panel:#211913; --ink:#f0e3d2; --muted:#a8937b;
+    --line:#3a2c21; --accent:#e0932f; --accent-ink:#1a1209; --ok:#8fc45c; --warn:#e8a33d; --err:#e2705c;
+    --glow:rgba(224,147,47,.14);
+  }
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif}
+body{margin:0;color:var(--ink);min-height:100vh;
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  background:
+    radial-gradient(120% 70% at 50% -10%, var(--glow) 0%, transparent 60%),
+    radial-gradient(80% 50% at 12% 8%, rgba(255,255,255,.05) 0%, transparent 55%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+  background-attachment:fixed}
 .topbar{padding:28px 20px 8px;max-width:980px;margin:0 auto}
-.topbar h1{margin:0;font-size:26px;letter-spacing:-.02em}
+body::before{content:'';position:fixed;top:0;left:0;right:0;height:20px;z-index:5;pointer-events:none;
+  background:var(--bg-deep);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='20'%3E%3Cpath d='M0 0h72v3l-6 17-5-13-7 9-6-11-8 15-6-12-7 7-6-10-8 12-6-13-7 6z' fill='black'/%3E%3C/svg%3E") repeat-x top;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='20'%3E%3Cpath d='M0 0h72v3l-6 17-5-13-7 9-6-11-8 15-6-12-7 7-6-10-8 12-6-13-7 6z' fill='black'/%3E%3C/svg%3E") repeat-x top;
+  opacity:.85}
+.topbar{padding-top:40px}
+
+.topbar h1{margin:0;font-size:28px;letter-spacing:-.01em;text-shadow:0 1px 0 rgba(0,0,0,.25)}
 .sub{margin:6px 0 0;color:var(--muted)}
 main{max-width:980px;margin:0 auto;padding:12px 20px 40px;display:flex;flex-direction:column;gap:18px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;
-  box-shadow:0 1px 2px rgba(0,0,0,.04)}
-.card h2{margin:0 0 10px;font-size:17px}
+.card{background:linear-gradient(180deg,var(--panel) 0%,color-mix(in srgb,var(--panel) 88%,var(--bg-deep)) 100%);
+  border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;
+  box-shadow:0 1px 0 rgba(255,255,255,.05) inset, 0 6px 18px rgba(0,0,0,.18)}
+.card h2{margin:0 0 10px;font-size:17px;letter-spacing:.01em}
+.card h2::before{content:'⛏ ';opacity:.55;font-size:.9em}
 .hint{margin:0 0 10px;color:var(--muted);font-size:13.5px}
 code{background:rgba(127,140,160,.16);padding:1px 5px;border-radius:5px;font-size:.92em}
 label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted)}
@@ -28,10 +45,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .grid .full{grid-column:1/-1}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
 button,.file-btn span{font:inherit;cursor:pointer;border-radius:9px;padding:9px 14px;border:1px solid transparent;
-  background:var(--accent);color:var(--accent-ink);font-weight:600;display:inline-block}
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 88%,#fff) 0%,var(--accent) 100%);
+  color:var(--accent-ink);font-weight:600;display:inline-block;
+  box-shadow:0 1px 2px rgba(0,0,0,.25), 0 0 14px -6px var(--accent)}
 button.secondary,.file-btn span{background:transparent;color:var(--ink);border-color:var(--line)}
 button.ghost{background:transparent;color:var(--muted);border-color:transparent;text-decoration:underline;padding:9px 4px}
-button:hover,.file-btn span:hover{filter:brightness(1.08)}
+button:hover,.file-btn span:hover{filter:brightness(1.1)}
+button:active{transform:translateY(1px)}
 button:disabled{opacity:.55;cursor:progress}
 .badge{margin-left:auto;font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:3px 11px}
 .radios{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}

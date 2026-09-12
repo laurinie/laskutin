@@ -29,8 +29,9 @@ const FREE_PLAN_DAILY_LIMIT = 300;
 export function EmailSection({ invoices, config, logo, dueDate }: EmailSectionProps) {
   const [open, setOpen] = useState(false);
   const { value: settings, setValue: setSettings } = usePersistentState<EmailSettings>(
-    'laskutin.email',
-    defaultEmailSettings
+    'luolaskut.email',
+    defaultEmailSettings,
+    { legacyKey: 'laskutin.email' }
   );
   const [apiKey, setApiKey] = useState('');
   const [confirming, setConfirming] = useState(false);
