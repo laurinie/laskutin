@@ -15,6 +15,7 @@ interface EmailSectionProps {
   config: InvoiceConfig;
   logo: Logo | null;
   dueDate: string;
+  persist: boolean;
 }
 
 interface SendResult {
@@ -26,12 +27,12 @@ interface SendResult {
 const DELAY_MS = 300;
 const FREE_PLAN_DAILY_LIMIT = 300;
 
-export function EmailSection({ invoices, config, logo, dueDate }: EmailSectionProps) {
+export function EmailSection({ invoices, config, logo, dueDate, persist }: EmailSectionProps) {
   const [open, setOpen] = useState(false);
   const { value: settings, setValue: setSettings } = usePersistentState<EmailSettings>(
     'luolaskut.email',
     defaultEmailSettings,
-    { legacyKey: 'laskutin.email' }
+    { legacyKey: 'laskutin.email', persist }
   );
   const [apiKey, setApiKey] = useState('');
   const [confirming, setConfirming] = useState(false);

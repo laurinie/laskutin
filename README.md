@@ -35,8 +35,9 @@ lähde koneelta mihinkään.
   tai ZIP jossa oma PDF per vastaanottaja (`1001_Matti_Meikalainen.pdf`) + `laskut.csv`.
 - **CSV-vienti**: `nimi;sahkoposti;laskunumero;viite;summa;erapaiva` – kätevä sähköpostien
   massalähetykseen (mail merge), jolla PDF:t toimitetaan vastaanottajille.
-- Lomakkeen arvot ja logo tallentuvat selaimen localStorageen, joten ne ovat tallella
-  seuraavalla käynnillä.
+- **Selaimeen tallennus on hallittavissa**: oma osionsa sivun lopussa. Tallennuksen voi kytkeä
+  pois (jolloin tiedot poistetaan heti eikä uusia kirjoiteta), tallennetut tiedot voi tyhjentää
+  ja lomakkeen voi nollata oletuksiin. Molemmat toiminnot vaativat vahvistuksen.
 
 ## Sähköpostilähetys (valinnainen)
 

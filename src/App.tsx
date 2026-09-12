@@ -9,6 +9,8 @@ import { PaymentSection } from './components/PaymentSection.js';
 import { ReferenceSection } from './components/ReferenceSection.js';
 import { OutputSection } from './components/OutputSection.js';
 import { EmailSection } from './components/EmailSection.js';
+import { StorageSection } from './components/StorageSection.js';
+import { persistEnabled, setPersistEnabled } from './lib/storage.js';
 
 const STORE_KEY = 'luolaskut.v1';
 const LEGACY_STORE_KEY = 'laskutin.v1';
@@ -22,18 +24,30 @@ interface Status {
 }
 
 export function App() {
+  const [persist, setPersist] = useState(persistEnabled);
   const { value: form, setValue: setForm, storageFull } = usePersistentState<InvoiceForm>(
     STORE_KEY,
     defaultForm,
-    { legacyKey: LEGACY_STORE_KEY, migrate: migrateForm }
+    { legacyKey: LEGACY_STORE_KEY, migrate: migrateForm, persist }
   );
-  const { value: logo, setValue: setLogo } = usePersistentState<Logo | null>(LOGO_KEY, () => null, { legacyKey: LEGACY_LOGO_KEY });
+  const { value: logo, setValue: setLogo } = usePersistentState<Logo | null>(LOGO_KEY, () => null, { legacyKey: LEGACY_LOGO_KEY, persist });
   const [status, setStatus] = useState<Status>({ message: '', isError: false });
 
   const setField = <K extends keyof InvoiceForm>(key: K, value: InvoiceForm[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
 
   const showStatus = (message: string, isError = false) => setStatus({ message, isError });
+
+  function changePersist(enabled: boolean) {
+    setPersistEnabled(enabled);
+    setPersist(enabled);
+  }
+
+  function resetForm() {
+    setForm(defaultForm());
+    setLogo(null);
+    showStatus('Lomake nollattu.');
+  }
 
   const { recipients, columnInfo } = useMemo(() => parseRecipients(form.recipients), [form.recipients]);
   const invoices = useMemo(() => invoicesFor(recipients, form), [recipients, form]);
@@ -81,7 +95,8 @@ export function App() {
           status={status}
           onStatus={showStatus}
         />
-        <EmailSection invoices={invoices} config={config} logo={logo} dueDate={form.dueDate} />
+        <EmailSection invoices={invoices} config={config} logo={logo} dueDate={form.dueDate} persist={persist} />
+        <StorageSection persist={persist} onPersist={changePersist} onReset={resetForm} />
       </main>
 
       <footer className="foot">

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 export interface PersistOptions<T> {
   legacyKey?: string;
   migrate?: (stored: Record<string, unknown>) => Partial<T>;
+  persist?: boolean;
 }
 
 function restore<T>(key: string, fallback: () => T, options: PersistOptions<T>): T {
@@ -22,17 +23,24 @@ function restore<T>(key: string, fallback: () => T, options: PersistOptions<T>):
 }
 
 export function usePersistentState<T>(key: string, initial: () => T, options: PersistOptions<T> = {}) {
+  const persist = options.persist ?? true;
   const [value, setValue] = useState<T>(() => restore(key, initial, options));
   const [storageFull, setStorageFull] = useState(false);
 
   useEffect(() => {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      if (persist) {
+        localStorage.setItem(key, JSON.stringify(value));
+      } else {
+        localStorage.removeItem(key);
+        if (options.legacyKey) localStorage.removeItem(options.legacyKey);
+      }
       setStorageFull(false);
     } catch {
       setStorageFull(true);
     }
-  }, [key, value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, value, persist]);
 
   return { value, setValue, storageFull };
 }
